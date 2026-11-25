@@ -1,694 +1,1890 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xitoy tilini o'rganamiz</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- React & ReactDOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  
-  <!-- Babel for parsing JSX in the browser -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <style>
-    .perspective-1000 { perspective: 1000px; }
-    .preserve-3d { transform-style: preserve-3d; }
-    .backface-hidden { backface-visibility: hidden; }
-    .rotate-y-180 { transform: rotateY(180deg); }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-  </style>
-</head>
-<body class="bg-slate-900 text-slate-100">
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    // --- ICON COMPONENTS ---
-    const Volume2 = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-    );
-    const ChevronLeft = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-    );
-    const ChevronRight = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    );
-    const CheckCircle = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-    );
-    const XCircle = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
-    );
-    const RotateCcw = ({ size = 24, className = "" }) => (
-      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-    );
-
-    // --- DATA DEFINITIONS ---
-    const VOCABULARY = [
-      { id: 1, zh: '头', pinyin: 'tóu', uz: 'bosh', ru: 'голова', en: 'head' },
-      { id: 2, zh: '疼', pinyin: 'téng', uz: "og'rimoq", ru: 'болеть', en: 'hurt' },
-      { id: 3, zh: '经常', pinyin: 'jīngcháng', uz: 'tez-tez', ru: 'часто', en: 'frequently; often' },
-      { id: 4, zh: '动', pinyin: 'dòng', uz: 'harakatlanmoq', ru: 'двигаться', en: 'move' },
-      { id: 5, zh: '着', pinyin: 'zhe', uz: '(davomiylik yuklamasi)', ru: '(частица продолжения)', en: '(aspect particle)' },
-      { id: 6, zh: '路上', pinyin: 'lùshang', uz: "yo'lda", ru: 'в пути', en: 'on the road; trip' },
-      { id: 7, zh: '慢', pinyin: 'màn', uz: 'sekin', ru: 'медленно', en: 'slow' },
-      { id: 8, zh: '进', pinyin: 'jìn', uz: 'kirmoq', ru: 'входить', en: 'come into' },
-      { id: 9, zh: '药', pinyin: 'yào', uz: 'dori', ru: 'лекарство', en: 'medicine' },
-      { id: 10, zh: '身体', pinyin: 'shēntǐ', uz: "tana, sog'liq", ru: 'тело, здоровье', en: 'body; health' },
-      { id: 11, zh: '时', pinyin: 'shí', uz: 'paytida, vaqtida', ru: 'время, период', en: 'a period of time' },
-      { id: 12, zh: '最', pinyin: 'zuì', uz: 'eng', ru: 'самый', en: 'most' },
-      { id: 13, zh: '药店', pinyin: 'yàodiàn', uz: 'dorixona', ru: 'аптека', en: 'pharmacy' },
-    ];
-
-    const DIALOGUES = [
-      {
-        title: "1-Matn (Text 1)",
-        context: { zh: "在教室，王一飞和白家月在聊天儿。", pinyin: "Zài jiàoshì, Wáng Yīfēi hé Bái Jiāyuè zài liáotiānr.", uz: "Sinf xonasida Vang Yifei va Bay Jiayue suhbatlashishmoqda.", ru: "В классе Ван Ифэй и Бай Цзяюэ разговаривают.", en: "In the classroom, Wang Yifei and Bai Jiayue are chatting." },
-        lines: [
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "家月，都下课了，你怎么还不回家？", textPinyin: "Jiāyuè, dōu xiàkè le, nǐ zěnme hái bù huí jiā?", uz: "Jiayue, dars tugadi, nega hali uyga qaytmayapsan?", ru: "Цзяюэ, уроки закончились, почему ты еще не идешь домой?", en: "Jiayue, class is over, why aren't you going home yet?" },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我头疼，不太舒服。", textPinyin: "Wǒ tóu téng, bú tài shūfu.", uz: "Boshim og'riyapti, o'zimni yaxshi his qilmayapman.", ru: "У меня болит голова, я плохо себя чувствую.", en: "My head hurts, I'm not feeling well." },
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "你这几天经常头疼，去医院看看吧。", textPinyin: "Nǐ zhè jǐ tiān jīngcháng tóu téng, qù yīyuàn kànkan ba.", uz: "Shu kunlarda boshing tez-tez og'riyapti, kasalxonaga borib ko'rin.", ru: "У тебя в последние дни часто болит голова, сходи в больницу.", en: "You've been having headaches frequently these days, you should go to the hospital." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我想休息一下，现在不能动，一动就疼。", textPinyin: "Wǒ xiǎng xiūxi yíxià, xiànzài bù néng dòng, yí dòng jiù téng.", uz: "Biroz dam olmoqchiman, hozir harakatlana olmayman, qimirlasam og'riyapti.", ru: "Я хочу немного отдохнуть, сейчас не могу двигаться, как только пошевелюсь - болит.", en: "I want to rest a bit, I can't move right now, it hurts as soon as I move." },
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "那你在这儿坐着，我去开车，一会儿送你去医院。", textPinyin: "Nà nǐ zài zhèr zuòzhe, wǒ qù kāichē, yíhuìr sòng nǐ qù yīyuàn.", uz: "U holda sen shu yerda o'tirib tur, men mashinani haydab kelaman, birozdan keyin kasalxonaga olib borib qo'yaman.", ru: "Тогда посиди здесь, я пойду за машиной, чуть позже отвезу тебя в больницу.", en: "Then you sit here, I'll go get the car, and take you to the hospital in a bit." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "谢谢王老师。", textPinyin: "Xièxie Wáng lǎoshī.", uz: "Rahmat, Vang o'qituvchi.", ru: "Спасибо, учитель Ван.", en: "Thank you, Teacher Wang." }
-        ]
-      },
-      {
-        title: "2-Matn (Text 2)",
-        context: { zh: "在王一飞车里，王一飞和白家月在聊天儿，李文打来一个电话。", pinyin: "Zài Wáng Yīfēi chē lǐ, Wáng Yīfēi hé Bái Jiāyuè zài liáotiānr, Lǐ Wén dǎ lái yígè diànhuà.", uz: "Vang Yifeining mashinasida, Vang Yifei va Bay Jiayue suhbatlashishmoqda, Li Ven qo'ng'iroq qildi.", ru: "В машине Ван Ифэй, Ван Ифэй и Бай Цзяюэ разговаривают, звонит Ли Вэнь.", en: "In Wang Yifei's car, Wang Yifei and Bai Jiayue are chatting, Li Wen makes a phone call." },
-        lines: [
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "现在路上车多，还下着雪，我开慢一点儿。", textPinyin: "Xiànzài lùshang chē duō, hái xiàzhe xuě, wǒ kāi màn yìdiǎnr.", uz: "Hozir yo'lda mashinalar ko'p, yana qor yog'yapti, men biroz sekinroq haydayman.", ru: "Сейчас на дороге много машин, еще и снег идет, я поеду помедленнее.", en: "There are many cars on the road now, and it's snowing, I will drive a bit slower." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "没问题，现在头没那么疼了。", textPinyin: "Méi wèntí, xiànzài tóu méi nàme téng le.", uz: "Muammo yo'q, hozir boshim unchalik og'rimayapti.", ru: "Без проблем, сейчас голова уже не так сильно болит.", en: "No problem, my head doesn't hurt as much now." },
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "好。李文来电话了，你帮我接一下。", textPinyin: "Hǎo. Lǐ Wén lái diànhuà le, nǐ bāng wǒ jiē yíxià.", uz: "Yaxshi. Li Vendan qo'ng'iroq kelyapti, menga javob berishga yordam ber.", ru: "Хорошо. Ли Вэнь звонит, помоги мне ответить.", en: "Okay. Li Wen is calling, please help me answer it." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "喂，李文，王老师开着车呢，你找她有事吗？", textPinyin: "Wèi, Lǐ Wén, Wáng lǎoshī kāizhe chē ne, nǐ zhǎo tā yǒu shì ma?", uz: "Alo, Li Ven, Vang o'qituvchi mashina haydayapti, unda ishing bormidi?", ru: "Алло, Ли Вэнь, учитель Ван за рулем, у тебя к ней дело?", en: "Hello, Li Wen, Teacher Wang is driving, do you need her for something?" },
-          { speaker: "李文", pinyin: "Lǐ Wén", zh: "没什么事。今天雪这么大，你们开车去哪儿啊？", textPinyin: "Méi shénme shì. Jīntiān xuě zhème dà, nǐmen kāichē qù nǎr a?", uz: "Hech qanday ish yo'q. Bugun qor shunchalik ko'p, mashinada qayerga ketyapsizlar?", ru: "Ничего особенного. Сегодня такой сильный снег, куда вы едете?", en: "Nothing much. The snow is so heavy today, where are you driving to?" },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "去医院，我头有点儿疼。", textPinyin: "Qù yīyuàn, wǒ tóu yǒudiǎnr téng.", uz: "Kasalxonaga, boshim biroz og'riyapti.", ru: "В больницу, у меня немного болит голова.", en: "To the hospital, my head hurts a bit." },
-          { speaker: "李文", pinyin: "Lǐ Wén", zh: "那我一会儿去看看你。", textPinyin: "Nà wǒ yíhuìr qù kànkan nǐ.", uz: "U holda men birozdan keyin borib seni ko'rib kelaman.", ru: "Тогда я позже навещу тебя.", en: "Then I'll go see you in a while." }
-        ]
-      },
-      {
-        title: "3-Matn (Text 3)",
-        context: { zh: "在房间，李文来看望白家月。", pinyin: "Zài fángjiān, Lǐ Wén lái kànwàng Bái Jiāyuè.", uz: "Xonada, Li Ven Bay Jiayueni ko'rgani keldi.", ru: "В комнате, Ли Вэнь пришел навестить Бай Цзяюэ.", en: "In the room, Li Wen comes to visit Bai Jiayue." },
-        lines: [
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "李文，快请进！", textPinyin: "Lǐ Wén, kuài qǐng jìn!", uz: "Li Ven, tez kiring!", ru: "Ли Вэнь, проходи скорее!", en: "Li Wen, please come in quickly!" },
-          { speaker: "李文", pinyin: "Lǐ Wén", zh: "家月，你怎么样了？头还疼吗？", textPinyin: "Jiāyuè, nǐ zěnmeyàng le? Tóu hái téng ma?", uz: "Jiayue, ahvoling qanday? Boshing hali ham og'riyaptimi?", ru: "Цзяюэ, как ты? Голова все еще болит?", en: "Jiayue, how are you doing? Does your head still hurt?" },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "不那么疼了。医生开了一些药，吃完就好多了。", textPinyin: "Bú nàme téng le. Yīshēng kāile yìxiē yào, chī wán jiù hǎo duō le.", uz: "Unchalik og'rimayapti. Shifokor ba'zi dorilarni yozib berdi, ularni ichgach ancha yaxshiman.", ru: "Уже не так болит. Врач выписал немного лекарств, после них стало намного лучше.", en: "It doesn't hurt as much. The doctor prescribed some medicine, I feel much better after taking it." },
-          { speaker: "李文", pinyin: "Lǐ Wén", zh: "那就好！", textPinyin: "Nà jiù hǎo!", uz: "Unda yaxshi!", ru: "Вот и хорошо!", en: "That's good!" },
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "家月，你想不想吃点儿东西？", textPinyin: "Jiāyuè, nǐ xiǎng bu xiǎng chī diǎnr dōngxi?", uz: "Jiayue, biror narsa yeyishni xohlaysanmi?", ru: "Цзяюэ, не хочешь ли ты чего-нибудь поесть?", en: "Jiayue, do you want to eat something?" },
-          { speaker: "李文", pinyin: "Lǐ Wén", zh: "吃点儿吧，身体不舒服时更要好好吃饭。", textPinyin: "Chī diǎnr ba, shēntǐ bù shūfu shí gèng yào hǎohǎo chī fàn.", uz: "Biroz yegin, tobing qochganda albatta yaxshilab ovqatlanish kerak.", ru: "Поешь немного, когда плохо себя чувствуешь, нужно еще лучше питаться.", en: "Eat a little, when you are not feeling well, you should eat properly." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "吃点儿什么呢？", textPinyin: "Chī diǎnr shénme ne?", uz: "Nima yesam ekan?", ru: "Что бы поесть?", en: "What should I eat?" },
-          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "你最喜欢吃中国菜，我做几个中国菜吧。", textPinyin: "Nǐ zuì xǐhuan chī Zhōngguó cài, wǒ zuò jǐ gè Zhōngguó cài ba.", uz: "Sen hammadan ham Xitoy ovqatini yoqtirasan, men bir nechta Xitoy ovqati tayyorlayman.", ru: "Ты больше всего любишь китайскую еду, я приготовлю несколько китайских блюд.", en: "You like Chinese food the most, I will cook some Chinese dishes." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "好的，谢谢王老师。", textPinyin: "Hǎo de, xièxie Wáng lǎoshī.", uz: "Yaxshi, rahmat Vang o'qituvchi.", ru: "Хорошо, спасибо, учитель Ван.", en: "Okay, thank you Teacher Wang." }
-        ]
-      },
-      {
-        title: "4-Matn (Text 4 - Kundalik / Diary)",
-        context: { zh: "在房间，白家月在写日记。", pinyin: "Zài fángjiān, Bái Jiāyuè zài xiě rìjì.", uz: "Xonada, Bay Jiayue kundalik yozyapti.", ru: "В комнате Бай Цзяюэ пишет дневник.", en: "In the room, Bai Jiayue is writing a diary." },
-        lines: [
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我这几天经常头疼，从药店买了点儿药，没去医院。", textPinyin: "Wǒ zhè jǐ tiān jīngcháng tóu téng, cóng yàodiàn mǎile diǎnr yào, méi qù yīyuàn.", uz: "Shu kunlarda boshim tez-tez og'riyapti, dorixonadan biroz dori oldim, kasalxonaga bormadim.", ru: "В эти дни у меня часто болит голова, я купила немного лекарств в аптеке и не пошла в больницу.", en: "I have been having frequent headaches these days, bought some medicine from the pharmacy, didn't go to the hospital." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "今天下课后，王老师看我不舒服，就送我去医院了。", textPinyin: "Jīntiān xiàkè hòu, Wáng lǎoshī kàn wǒ bù shūfu, jiù sòng wǒ qù yīyuàn le.", uz: "Bugun darsdan so'ng, Vang o'qituvchi ahvolim yaxshi emasligini ko'rib, meni kasalxonaga olib bordi.", ru: "Сегодня после уроков учитель Ван увидела, что мне плохо, и отвезла меня в больницу.", en: "Today after class, Teacher Wang saw I was unwell and took me to the hospital." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "从医院回来，李文也来看我了。", textPinyin: "Cóng yīyuàn huílái, Lǐ Wén yě lái kàn wǒ le.", uz: "Kasalxonadan qaytganimda, Li Ven ham meni ko'rgani keldi.", ru: "По возвращении из больницы Ли Вэнь тоже пришел навестить меня.", en: "Returning from the hospital, Li Wen also came to see me." },
-          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "现在他们都回去了，我也要睡觉了。", textPinyin: "Xiànzài tāmen dōu huíqù le, wǒ yě yào shuìjiào le.", uz: "Hozir ularning barchasi qaytib ketishdi, men ham uxlamoqchiman.", ru: "Сейчас они все разошлись по домам, и я тоже собираюсь спать.", en: "Now they have all gone back, and I am going to sleep too." }
-        ]
-      }
-    ];
-
-    const GRAMMAR = [
-      {
-        title: "1. 动态助词“着” (1) - Davomiylikni bildiruvchi yuklama",
-        explanation: {
-          uz: "Fe'ldan keyin kelib, harakat yoki holatning davom etayotganini bildiradi. Inkor shakli fe'ldan oldin '没(有)' qo'yish orqali yasaladi.",
-          ru: "Используется после глагола для указания на продолжение действия или состояния. Отрицательная форма образуется добавлением '没(有)' перед глаголом.",
-          en: "Used after a verb to indicate the continuation of an action or a state. The negative form is created by adding '没(有)' before the verb."
-        },
-        examples: [
-          { zh: "那你在这儿坐着。", pinyin: "Nà nǐ zài zhèr zuòzhe.", uz: "U holda siz shu yerda o'tirib turing." },
-          { zh: "教室的门开着。", pinyin: "Jiàoshì de mén kāizhe.", uz: "Sinf xonasining eshigi ochiq turibdi." },
-          { zh: "教室的门没开着。", pinyin: "Jiàoshì de mén méi kāizhe.", uz: "Sinf xonasining eshigi ochiq turmayapti." }
-        ]
-      },
-      {
-        title: "2. 动态助词“着” (2) - Davomiylikni bildiruvchi yuklama",
-        explanation: {
-          uz: "Harakatning davomiyligini bildiruvchi gaplarda to'ldiruvchi '着' yuklamasidan keyin kelishi kerak. Savol shakllari: 1) gap oxirida '吗', 2) gap oxirida '没有', 3) Fe'l+没+Fe'l+着.",
-          ru: "В предложениях, указывающих на продолжение, дополнение должно стоять после '着'. Три формы вопроса: 1) '吗' в конце, 2) '没有' в конце, 3) Глагол+没+Глагол+着.",
-          en: "In sentences indicating continuation, the object must be placed after '着'. Three question forms: 1) add '吗' at the end, 2) add '没有' at the end, 3) Verb+没+Verb+着."
-        },
-        examples: [
-          { zh: "她穿着白色的裤子。", pinyin: "Tā chuānzhe báisè de kùzi.", uz: "U oq shim kiyib olgan." },
-          { zh: "教室的门开着吗？", pinyin: "Jiàoshì de mén kāizhe ma?", uz: "Sinf xonasining eshigi ochiqmi?" },
-          { zh: "她拿没拿着手机？", pinyin: "Tā ná méi názhe shǒujī?", uz: "U telefonini ushlab turibdimi yo'qmi?" }
-        ]
-      },
-      {
-        title: "3. 程度副词“最” - 'Eng' daraja ravishi",
-        explanation: {
-          uz: "'最' daraja ravishi sifatlar yoki psixologik fe'llar oldidan kelib, biror xususiyat barcha o'xshash odamlar yoki narsalardan ustun ekanligini bildiradi.",
-          ru: "Наречие степени '最' используется перед прилагательными или психологическими глаголами, чтобы показать, что признак превосходит все подобные вещи.",
-          en: "The adverb of degree '最' is used before adjectives or psychological verbs to indicate that a certain attribute surpasses all similar people/things."
-        },
-        examples: [
-          { zh: "你最喜欢吃中国菜。", pinyin: "Nǐ zuì xǐhuan chī Zhōngguó cài.", uz: "Siz hammadan ham ko'p Xitoy taomini yoqtirasiz." },
-          { zh: "在我们家，爸爸最高。", pinyin: "Zài wǒmen jiā, bàba zuì gāo.", uz: "Bizning oilada eng bo'yi balandi dada." },
-          { zh: "你们班谁说中文说得最好？", pinyin: "Nǐmen bān shéi shuō zhōngwén shuō de zuì hǎo?", uz: "Sinfingizda kim xitoychada eng yaxshi gapiradi?" }
-        ]
-      }
-    ];
-
-    const GRAMMAR_TEST_QUESTIONS = [
-      { q: "门没开___。", options: ["着", "了", "过", "得"], ans: 0 },
-      { q: "你在___儿坐着。", options: ["的", "这", "了", "着"], ans: 1 },
-      { q: "外边下___雨。", options: ["过", "得", "着", "了"], ans: 2 },
-      { q: "我___想去中国旅游。", options: ["最", "更", "比", "就"], ans: 0 },
-      { q: "你们班谁的汉语___好？", options: ["就", "最", "才", "都"], ans: 1 },
-      { q: "王老师开___车呢。", options: ["的", "了", "着", "过"], ans: 2 },
-      { q: "她没穿___红色的衣服。", options: ["着", "了", "得", "在"], ans: 0 },
-      { q: "电视开着___？", options: ["呢", "吗", "吧", "啊"], ans: 1 },
-      { q: "他拿___拿着书？", options: ["不", "是", "没", "着"], ans: 2 },
-      { q: "苹果___好吃。", options: ["最", "在", "还", "着"], ans: 0 },
-      { q: "那个房间的门关___。", options: ["了", "着", "吗", "过"], ans: 1 },
-      { q: "昨天路上车很___。", options: ["了", "大", "多", "着"], ans: 2 },
-      { q: "妹妹___喜欢看电影。", options: ["最", "着", "没", "就"], ans: 0 },
-      { q: "老师站着，学生___着。", options: ["跑", "坐", "走", "站"], ans: 1 },
-      { q: "桌子上放___一本书。", options: ["过", "了", "着", "得"], ans: 2 }
-    ];
-
-    const BLANKS_QUESTIONS = [
-      { text: "路上车多人多，你 ___ 点儿开。", answer: "慢" },
-      { text: "他今天 ___ 不舒服，所以没来上课。", answer: "身体" },
-      { text: "星期天我 ___ 跟朋友去踢球。", answer: "经常" },
-      { text: "我到家 ___ 都快9点了。", answer: "时" },
-      { text: "他是我 ___ 好的朋友。", answer: "最" },
-      { text: "我不舒服时就来这个 ___ 买药。", answer: "药店" },
-      { text: "我的 ___ 有点儿疼。", answer: "头" },
-      { text: "他的腿受伤了，不能 ___。", answer: "动" },
-      { text: "老师站 ___ 上课。", answer: "着" },
-      { text: "医生开了些 ___，吃完就好多了。", answer: "药" },
-      { text: "外面冷，快请 ___ 来。", answer: "进" },
-      { text: "下雪了，在 ___ 小心一点儿。", answer: "路上" },
-      { text: "昨天踢足球，今天腿很 ___。", answer: "疼" }
-    ];
-    const BLANKS_OPTIONS = ["慢", "身体", "经常", "时", "最", "药店", "头", "动", "着", "药", "进", "路上", "疼"];
-
-    // --- UTILITY ---
-    const playAudio = (text) => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        msg.lang = 'zh-CN';
-        window.speechSynthesis.speak(msg);
-      }
-    };
-
-    // --- COMPONENTS ---
-    const Flashcards = () => {
-      const [index, setIndex] = useState(0);
-      const [isFlipped, setIsFlipped] = useState(false);
-      const word = VOCABULARY[index];
-
-      const nextCard = () => {
-        setIsFlipped(false);
-        setIndex((prev) => (prev + 1) % VOCABULARY.length);
-      };
-      const prevCard = () => {
-        setIsFlipped(false);
-        setIndex((prev) => (prev - 1 + VOCABULARY.length) % VOCABULARY.length);
-      };
-
-      return (
-        <div className="flex flex-col items-center w-full mt-8">
-          <div 
-            className="relative w-full max-w-md h-80 perspective-1000 cursor-pointer"
-            onClick={() => setIsFlipped(!isFlipped)}
-          >
-            <div className={`w-full h-full duration-500 preserve-3d relative transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
-              {/* Front */}
-              <div className="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-700 shadow-2xl p-6">
-                 <button 
-                    onClick={(e) => { e.stopPropagation(); playAudio(word.zh); }}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-700 rounded-full transition-colors"
-                 >
-                    <Volume2 size={24} />
-                 </button>
-                 <h2 className="text-8xl font-bold text-white mb-6">{word.zh}</h2>
-              </div>
-              {/* Back */}
-              <div className="absolute w-full h-full backface-hidden rotate-y-180 flex flex-col items-center justify-center bg-slate-800/80 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-2xl p-6 text-center">
-                 <button 
-                    onClick={(e) => { e.stopPropagation(); playAudio(word.zh); }}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-700 rounded-full transition-colors"
-                 >
-                    <Volume2 size={24} />
-                 </button>
-                 <p className="text-4xl text-teal-400 font-semibold mb-6">{word.pinyin}</p>
-                 <div className="space-y-3 w-full border-t border-slate-700 pt-6">
-                    <p className="text-xl text-slate-200"><span className="text-slate-500 font-medium mr-2">UZ:</span>{word.uz}</p>
-                    <p className="text-lg text-slate-300"><span className="text-slate-500 font-medium mr-2">RU:</span>{word.ru}</p>
-                    <p className="text-lg text-slate-300"><span className="text-slate-500 font-medium mr-2">EN:</span>{word.en}</p>
-                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 mt-8">
-            <button onClick={prevCard} className="p-3 bg-slate-800 text-slate-300 hover:text-white rounded-full hover:bg-slate-700 transition">
-              <ChevronLeft size={28} />
-            </button>
-            <span className="text-slate-400 font-medium text-lg">{index + 1} / {VOCABULARY.length}</span>
-            <button onClick={nextCard} className="p-3 bg-slate-800 text-slate-300 hover:text-white rounded-full hover:bg-slate-700 transition">
-              <ChevronRight size={28} />
-            </button>
-          </div>
-        </div>
-      );
-    };
-
-    const VocabTest = () => {
-      const [questions, setQuestions] = useState([]);
-      const [currentQ, setCurrentQ] = useState(0);
-      const [score, setScore] = useState(0);
-      const [showResult, setShowResult] = useState(false);
-      const [selected, setSelected] = useState(null);
-
-      useEffect(() => {
-        generateTest();
-      }, []);
-
-      const generateTest = () => {
-        let qArray = [...VOCABULARY].sort(() => 0.5 - Math.random());
-        let generated = qArray.map(word => {
-          let options = [word.uz];
-          while(options.length < 4) {
-            let randWord = VOCABULARY[Math.floor(Math.random() * VOCABULARY.length)].uz;
-            if(!options.includes(randWord)) options.push(randWord);
-          }
-          return { word: word, options: options.sort(() => 0.5 - Math.random()) };
-        });
-        setQuestions(generated);
-        setCurrentQ(0);
-        setScore(0);
-        setShowResult(false);
-        setSelected(null);
-      };
-
-      const handleSelect = (opt) => {
-        if (selected) return;
-        setSelected(opt);
-        if (opt === questions[currentQ].word.uz) {
-          setScore(s => s + 1);
-        }
-        setTimeout(() => {
-          if (currentQ + 1 < questions.length) {
-            setCurrentQ(c => c + 1);
-            setSelected(null);
-          } else {
-            setShowResult(true);
-          }
-        }, 1000);
-      };
-
-      if (!questions.length) return null;
-
-      if (showResult) {
-        return (
-          <div className="flex flex-col items-center justify-center p-10 bg-slate-800/50 rounded-2xl border border-slate-700 max-w-lg mx-auto mt-10">
-            <h2 className="text-3xl text-white font-bold mb-4">Natija</h2>
-            <p className="text-6xl font-black text-teal-400 mb-8">{score} / {questions.length}</p>
-            <button onClick={generateTest} className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-medium transition flex items-center gap-2">
-              <RotateCcw size={20} /> Qayta boshlash
-            </button>
-          </div>
-        );
-      }
-
-      const q = questions[currentQ];
-
-      return (
-        <div className="flex flex-col items-center w-full mt-6 max-w-xl mx-auto">
-          <div className="w-full flex justify-between items-center mb-6 px-4">
-            <span className="text-slate-400 font-medium">Savol: {currentQ + 1} / {questions.length}</span>
-            <span className="text-teal-400 font-medium">To'g'ri: {score}</span>
-          </div>
-          
-          <div className="w-full bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-3xl p-10 flex flex-col items-center text-center shadow-xl">
-            <p className="text-slate-400 text-lg mb-4">Ushbu so'zning ma'nosini toping:</p>
-            <h2 className="text-7xl font-bold text-white mb-10">{q.word.zh}</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              {q.options.map((opt, i) => {
-                let btnClass = "bg-slate-700 text-slate-200 hover:bg-slate-600";
-                if (selected) {
-                  if (opt === q.word.uz) btnClass = "bg-teal-600 text-white"; 
-                  else if (opt === selected) btnClass = "bg-red-500/80 text-white"; 
-                  else btnClass = "bg-slate-800 text-slate-500 opacity-50"; 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lesson 2: 租到了合适的房子 | Dilfuza Kāng lǎo shī</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Noto Sans SC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans SC', 'sans-serif'],
+                        zh: ['Noto Sans SC', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            teal: '#0F4C5C',
+                            tealLight: '#1B6B7F',
+                            coral: '#D95D39',
+                            sage: '#2A9D8F',
+                            gold: '#E9C46A',
+                            cream: '#FAF8F5',
+                            sand: '#F2ECE4',
+                        }
+                    }
                 }
-                return (
-                  <button 
-                    key={i}
-                    onClick={() => handleSelect(opt)}
-                    disabled={!!selected}
-                    className={`py-4 px-6 rounded-xl text-lg font-medium transition-all ${btnClass}`}
-                  >
-                    {opt}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      );
-    };
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF8F5;
+            color: #1E293B;
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 3D Flashcard Flip Styles */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        /* Audio Wave Animation */
+        @keyframes pulseWave {
+            0%, 100% { transform: scaleY(0.5); }
+            50% { transform: scaleY(1.2); }
+        }
+        .speaking .wave-bar {
+            animation: pulseWave 0.6s infinite ease-in-out;
+            transform-origin: center;
+        }
+        .speaking .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+        .speaking .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+        /* Hide scrollbar for horizontal nav on mobile */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
 
-    const Dialogues = () => {
-      return (
-        <div className="space-y-10 mt-6 max-w-3xl mx-auto pb-10">
-          {DIALOGUES.map((dialogue, idx) => (
-            <div key={idx} className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden shadow-lg">
-              <div className="bg-slate-900/50 px-6 py-4 border-b border-slate-700/50">
-                <h3 className="text-xl font-bold text-teal-400 mb-2">{dialogue.title}</h3>
-                <div className="text-slate-300 text-sm space-y-1">
-                   <p className="text-white text-base mb-1">{dialogue.context.zh} <span className="text-slate-400 text-sm ml-2">({dialogue.context.pinyin})</span></p>
-                   <p><span className="text-slate-500 font-medium">UZ:</span> {dialogue.context.uz}</p>
-                   <p><span className="text-slate-500 font-medium">RU:</span> {dialogue.context.ru}</p>
-                   <p><span className="text-slate-500 font-medium">EN:</span> {dialogue.context.en}</p>
-                </div>
-              </div>
-              <div className="p-6 space-y-6">
-                {dialogue.lines.map((line, lIdx) => (
-                  <div key={lIdx} className="flex gap-4">
-                    <div className="min-w-[80px] text-right mt-1">
-                      <span className="inline-block bg-slate-700 text-slate-200 text-xs font-bold px-2 py-1 rounded">
-                        {line.speaker}
-                      </span>
+    <!-- ==================== HEADER WITH INTERACTIVE SVG HERO ==================== -->
+    <header class="bg-gradient-to-br from-brand-teal via-[#155E70] to-[#0B3945] text-white shadow-lg relative overflow-hidden">
+        <!-- Decorative Background SVG Pattern -->
+        <svg class="absolute inset-0 w-full h-full opacity-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+        </svg>
+
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <!-- Title & Subtitle -->
+                <div class="text-center md:text-left">
+                    <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-3.5 py-1 rounded-full text-xs sm:text-sm font-medium text-brand-gold mb-3 border border-white/20">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        <span>HSK 3.0 • 4-daraja • 2-dars</span>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-start justify-between">
-                         <div>
-                            <p className="text-white font-medium text-lg">{line.zh}</p>
-                            <p className="text-teal-400 text-sm mb-2">{line.textPinyin}</p>
-                         </div>
-                         <button 
-                            onClick={() => playAudio(line.zh)}
-                            className="p-1.5 text-slate-400 hover:text-teal-400 hover:bg-slate-700/50 rounded-full transition"
-                          >
-                            <Volume2 size={18} />
-                          </button>
-                      </div>
-                      <p className="text-slate-300 text-sm"><span className="text-slate-500 mr-2">UZ:</span>{line.uz}</p>
-                      <p className="text-slate-400 text-sm"><span className="text-slate-500 mr-2">RU:</span>{line.ru}</p>
-                      <p className="text-slate-400 text-sm"><span className="text-slate-500 mr-2">EN:</span>{line.en}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    };
-
-    const Grammar = () => {
-      return (
-        <div className="space-y-8 mt-6 max-w-3xl mx-auto pb-10">
-          {GRAMMAR.map((item, idx) => (
-            <div key={idx} className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-2xl font-bold text-teal-400 mb-4">{item.title}</h3>
-              
-              <div className="space-y-2 mb-6 text-sm">
-                <p className="text-slate-200"><span className="text-slate-500 font-semibold w-8 inline-block">UZ:</span> {item.explanation.uz}</p>
-                <p className="text-slate-300"><span className="text-slate-500 font-semibold w-8 inline-block">RU:</span> {item.explanation.ru}</p>
-                <p className="text-slate-300"><span className="text-slate-500 font-semibold w-8 inline-block">EN:</span> {item.explanation.en}</p>
-              </div>
-
-              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
-                <h4 className="text-slate-400 font-semibold mb-3 text-sm uppercase tracking-wider">Misollar (Examples)</h4>
-                <div className="space-y-4">
-                  {item.examples.map((ex, eIdx) => (
-                    <div key={eIdx} className="flex flex-col border-l-2 border-teal-500 pl-4">
-                       <div className="flex items-center gap-3">
-                          <p className="text-white text-lg">{ex.zh}</p>
-                          <button 
-                            onClick={() => playAudio(ex.zh)}
-                            className="p-1 text-slate-500 hover:text-teal-400 transition"
-                          >
-                            <Volume2 size={16} />
-                          </button>
-                       </div>
-                       <p className="text-teal-400/80 text-sm">{ex.pinyin}</p>
-                       <p className="text-slate-400 text-sm mt-1">{ex.uz}</p>
-                    </div>
-                  ))}
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-zh tracking-tight text-white drop-shadow-sm">
+                        租到了合适的房子
+                    </h1>
+                    <p class="mt-2.5 text-base sm:text-lg font-medium text-amber-200 tracking-wide">
+                        Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz
+                    </p>
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    };
 
-    const GrammarTest = () => {
-      const [score, setScore] = useState(0);
-      const [showResult, setShowResult] = useState(false);
-      const [answers, setAnswers] = useState(Array(GRAMMAR_TEST_QUESTIONS.length).fill(null));
+                <!-- Bespoke Apartment & Garden SVG Illustration -->
+                <div class="w-full max-w-xs sm:max-w-sm flex-shrink-0">
+                    <svg viewBox="0 0 360 155" class="w-full h-auto drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Sky & Sun -->
+                        <rect x="0" y="0" width="360" height="155" rx="18" fill="#134E5E" fill-opacity="0.55" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+                        <circle cx="305" cy="36" r="18" fill="#E9C46A" opacity="0.9"/>
+                        <circle cx="305" cy="36" r="26" fill="#E9C46A" opacity="0.25"/>
+                        <!-- Clouds -->
+                        <g fill="white" opacity="0.25">
+                            <rect x="28" y="22" width="44" height="12" rx="6"/>
+                            <rect x="40" y="16" width="24" height="10" rx="5"/>
+                            <rect x="220" y="26" width="38" height="10" rx="5"/>
+                        </g>
+                        <!-- Ground / Garden -->
+                        <path d="M 10 132 Q 180 122 350 132 L 350 148 Q 350 155 342 155 L 18 155 Q 10 155 10 148 Z" fill="#2A9D8F"/>
+                        <!-- Apartment Building -->
+                        <rect x="92" y="34" width="116" height="98" rx="6" fill="#FAF8F5"/>
+                        <rect x="86" y="26" width="128" height="12" rx="4" fill="#D95D39"/>
+                        <!-- Windows (Glowing Warm Light) -->
+                        <g>
+                            <rect x="106" y="48" width="22" height="20" rx="3" fill="#E9C46A"/>
+                            <line x1="117" y1="48" x2="117" y2="68" stroke="#FAF8F5" stroke-width="1.5"/>
+                            <rect x="139" y="48" width="22" height="20" rx="3" fill="#8ECAE6"/>
+                            <line x1="150" y1="48" x2="150" y2="68" stroke="#FAF8F5" stroke-width="1.5"/>
+                            <rect x="172" y="48" width="22" height="20" rx="3" fill="#E9C46A"/>
+                            <line x1="183" y1="48" x2="183" y2="68" stroke="#FAF8F5" stroke-width="1.5"/>
 
-      const handleOption = (qIdx, optIdx) => {
-        if (showResult) return;
-        const newAns = [...answers];
-        newAns[qIdx] = optIdx;
-        setAnswers(newAns);
-      };
+                            <rect x="106" y="78" width="22" height="20" rx="3" fill="#8ECAE6"/>
+                            <rect x="139" y="78" width="22" height="20" rx="3" fill="#E9C46A"/>
+                            <rect x="172" y="78" width="22" height="20" rx="3" fill="#8ECAE6"/>
+                        </g>
+                        <!-- Front Door -->
+                        <rect x="138" y="106" width="24" height="26" rx="3" fill="#0F4C5C"/>
+                        <circle cx="157" cy="120" r="2" fill="#E9C46A"/>
+                        <!-- Trees & Flowers (Small Garden) -->
+                        <g>
+                            <rect x="46" y="102" width="6" height="30" rx="2" fill="#7F4F24"/>
+                            <circle cx="49" cy="92" r="18" fill="#52B788"/>
+                            <circle cx="38" cy="98" r="12" fill="#40916C"/>
 
-      const submitTest = () => {
-        let s = 0;
-        answers.forEach((ans, idx) => {
-          if (ans === GRAMMAR_TEST_QUESTIONS[idx].ans) s++;
-        });
-        setScore(s);
-        setShowResult(true);
-      };
-
-      const resetTest = () => {
-        setAnswers(Array(GRAMMAR_TEST_QUESTIONS.length).fill(null));
-        setScore(0);
-        setShowResult(false);
-      };
-
-      return (
-        <div className="max-w-2xl mx-auto mt-6 pb-10">
-          {!showResult ? (
-            <div className="space-y-6">
-              <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl mb-6">
-                <p className="text-slate-300">请选择正确的答案填空 (Iltimos, bo'sh joyga to'g'ri javobni tanlang):</p>
-              </div>
-              {GRAMMAR_TEST_QUESTIONS.map((q, idx) => (
-                <div key={idx} className="bg-slate-800/60 p-6 rounded-xl border border-slate-700/50">
-                  <p className="text-xl text-white font-medium mb-4">{idx + 1}. {q.q}</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {q.options.map((opt, oIdx) => (
-                      <button
-                        key={oIdx}
-                        onClick={() => handleOption(idx, oIdx)}
-                        className={`p-3 rounded-lg text-lg font-medium transition ${
-                          answers[idx] === oIdx 
-                            ? 'bg-teal-600 text-white' 
-                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
+                            <rect x="242" y="105" width="6" height="27" rx="2" fill="#7F4F24"/>
+                            <circle cx="245" cy="96" r="16" fill="#52B788"/>
+                            <!-- Little Flowers -->
+                            <circle cx="28" cy="134" r="3" fill="#F4A261"/>
+                            <circle cx="68" cy="133" r="3" fill="#E9C46A"/>
+                            <circle cx="226" cy="134" r="3" fill="#F4A261"/>
+                        </g>
+                        <!-- Subway Sign (地铁站) -->
+                        <g transform="translate(278, 86)">
+                            <rect x="16" y="22" width="4" height="26" fill="#CBD5E1"/>
+                            <rect x="0" y="0" width="38" height="24" rx="6" fill="#0F4C5C" stroke="#E9C46A" stroke-width="2"/>
+                            <text x="19" y="16" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="700" font-family="Noto Sans SC, sans-serif">地铁</text>
+                        </g>
+                        <!-- Rent Tag -->
+                        <g transform="translate(18, 46)">
+                            <rect x="0" y="0" width="54" height="24" rx="6" fill="#D95D39"/>
+                            <text x="27" y="16" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="700" font-family="Noto Sans SC, sans-serif">出租</text>
+                        </g>
+                    </svg>
                 </div>
-              ))}
-              <button 
-                onClick={submitTest}
-                disabled={answers.includes(null)}
-                className={`w-full py-4 rounded-xl text-lg font-bold transition mt-6 ${
-                  answers.includes(null) 
-                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed' 
-                    : 'bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/50'
-                }`}
-              >
-                Tekshirish (Check)
-              </button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center bg-slate-800/80 p-10 rounded-3xl border border-slate-700 text-center shadow-2xl">
-              <h2 className="text-3xl text-white font-bold mb-2">Natija (Score)</h2>
-              <p className="text-7xl font-black text-teal-400 mb-8">{score} / {GRAMMAR_TEST_QUESTIONS.length}</p>
-              
-              <div className="w-full space-y-3 mb-8 text-left">
-                 {GRAMMAR_TEST_QUESTIONS.map((q, idx) => {
-                    const isCorrect = answers[idx] === q.ans;
-                    return (
-                       <div key={idx} className={`p-4 rounded-lg flex items-start gap-3 ${isCorrect ? 'bg-teal-900/20 border border-teal-800/50' : 'bg-red-900/20 border border-red-800/50'}`}>
-                          <div className="mt-1">
-                             {isCorrect ? <CheckCircle size={20} className="text-teal-400"/> : <XCircle size={20} className="text-red-400"/>}
-                          </div>
-                          <div>
-                             <p className="text-white">{idx + 1}. {q.q.replace('___', ` [ ${q.options[q.ans]} ] `)}</p>
-                             {!isCorrect && <p className="text-red-300 text-sm mt-1">Sizning javobingiz: {q.options[answers[idx]]}</p>}
-                          </div>
-                       </div>
-                    )
-                 })}
-              </div>
-
-              <button onClick={resetTest} className="px-8 py-4 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-bold transition flex items-center gap-2">
-                <RotateCcw size={22} /> Qayta boshlash
-              </button>
-            </div>
-          )}
         </div>
-      );
-    };
+    </header>
 
-    const FillBlanks = () => {
-      const [answers, setAnswers] = useState(Array(BLANKS_QUESTIONS.length).fill(""));
-      const [checked, setChecked] = useState(false);
-
-      const handleSelect = (idx, val) => {
-        if(checked) return;
-        const newAns = [...answers];
-        newAns[idx] = val;
-        setAnswers(newAns);
-      };
-
-      const reset = () => {
-        setAnswers(Array(BLANKS_QUESTIONS.length).fill(""));
-        setChecked(false);
-      }
-
-      return (
-        <div className="max-w-3xl mx-auto mt-6 pb-10">
-          <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl mb-6">
-            <p className="text-slate-300 font-medium mb-4">So'zlarni tanlab gaplarni to'ldiring:</p>
-            <div className="flex flex-wrap gap-2">
-              {BLANKS_OPTIONS.map((opt, i) => (
-                 <span key={i} className="px-3 py-1 bg-slate-700 text-teal-300 rounded-md text-sm border border-slate-600">{opt}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {BLANKS_QUESTIONS.map((q, idx) => {
-              const parts = q.text.split('___');
-              const isCorrect = checked && answers[idx] === q.answer;
-              const isWrong = checked && answers[idx] !== q.answer;
-
-              return (
-                <div key={idx} className={`bg-slate-800/60 p-5 rounded-xl border flex items-center gap-3 transition ${isCorrect ? 'border-teal-500/50 bg-teal-900/10' : isWrong ? 'border-red-500/50 bg-red-900/10' : 'border-slate-700/50'}`}>
-                  <span className="text-slate-500 font-medium w-6">{idx + 1}.</span>
-                  <div className="flex-1 text-lg text-slate-200 flex flex-wrap items-center">
-                    <span className="mr-2">{parts[0]}</span>
-                    <select 
-                      className={`bg-slate-900 border px-3 py-1 rounded-lg text-teal-400 font-bold focus:outline-none appearance-none cursor-pointer ${checked ? 'cursor-not-allowed' : ''} ${isWrong ? 'border-red-500/50' : 'border-slate-600'}`}
-                      value={answers[idx]}
-                      onChange={(e) => handleSelect(idx, e.target.value)}
-                      disabled={checked}
-                    >
-                      <option value="" disabled>-</option>
-                      {BLANKS_OPTIONS.map((o, i) => (
-                        <option key={i} value={o}>{o}</option>
-                      ))}
-                    </select>
-                    <span className="ml-2">{parts[1]}</span>
-                  </div>
-                  {checked && isCorrect && <CheckCircle className="text-teal-400 ml-auto" size={24} />}
-                  {checked && isWrong && <XCircle className="text-red-400 ml-auto" size={24} />}
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="mt-8 flex gap-4">
-             {!checked ? (
-               <button 
-                 onClick={() => setChecked(true)}
-                 disabled={answers.includes("")}
-                 className={`flex-1 py-4 rounded-xl text-lg font-bold transition ${answers.includes("") ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-500 text-white shadow-lg'}`}
-               >
-                 Tekshirish
-               </button>
-             ) : (
-               <button 
-                 onClick={reset}
-                 className="flex-1 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-lg font-bold transition flex justify-center items-center gap-2"
-               >
-                 <RotateCcw size={20} /> Qayta boshlash
-               </button>
-             )}
-          </div>
-        </div>
-      )
-    };
-
-    function App() {
-      const [activeTab, setActiveTab] = useState('flashcards');
-
-      const TABS = [
-        { id: 'flashcards', label: "Lug'atlar" },
-        { id: 'vocabTest', label: "Lug'at Testi" },
-        { id: 'dialogues', label: "Muloqot" },
-        { id: 'grammar', label: "Grammatika" },
-        { id: 'grammarTest', label: "Grammatika Testi" },
-        { id: 'fillBlanks', label: "So'zlarni to'ldirish" }
-      ];
-
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 font-sans selection:bg-teal-500/30 text-slate-100 flex flex-col">
-          <header className="pt-10 pb-6 px-6 text-center shrink-0">
-            <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-400 mb-3 drop-shadow-sm">
-              我最喜欢吃中国菜
-            </h1>
-            <p className="text-slate-400 font-medium tracking-wide mt-2">
-              Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz
-            </p>
-          </header>
-
-          <main className="flex-1 w-full max-w-5xl mx-auto px-4 pb-20 flex flex-col">
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
-              {TABS.map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
-                    activeTab === tab.id 
-                      ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/50 scale-105' 
-                      : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 border border-slate-700/50'
-                  }`}
-                >
-                  {tab.label}
+    <!-- ==================== NAVIGATION TABS (UZBEK LABELS) ==================== -->
+    <nav class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-2 sm:px-6">
+            <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-2.5" id="nav-tabs" role="tablist">
+                <!-- Tab 1: Flashcards -->
+                <button onclick="switchTab('flashcards')" data-tab="flashcards"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"/>
+                        <path d="M7 8h10M7 12h6"/>
+                    </svg>
+                    <span>So'z kartochkalari</span>
                 </button>
-              ))}
+                <!-- Tab 2: Vocab Quiz -->
+                <button onclick="switchTab('vocab-quiz')" data-tab="vocab-quiz"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span>So'z testi</span>
+                </button>
+                <!-- Tab 3: Dialogues & Texts -->
+                <button onclick="switchTab('dialogues')" data-tab="dialogues"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span>Matnlar va dialoglar</span>
+                </button>
+                <!-- Tab 4: Grammar Explanation -->
+                <button onclick="switchTab('grammar')" data-tab="grammar"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                    </svg>
+                    <span>Grammatika</span>
+                </button>
+                <!-- Tab 5: Grammar Quiz -->
+                <button onclick="switchTab('grammar-quiz')" data-tab="grammar-quiz"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>Grammatika testi</span>
+                </button>
+                <!-- Tab 6: Exercises (Fill in the blanks) -->
+                <button onclick="switchTab('exercises')" data-tab="exercises"
+                    class="tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    <span>Mashqlar</span>
+                </button>
             </div>
-
-            <div className="w-full flex-1">
-              {activeTab === 'flashcards' && <Flashcards />}
-              {activeTab === 'vocabTest' && <VocabTest />}
-              {activeTab === 'dialogues' && <Dialogues />}
-              {activeTab === 'grammar' && <Grammar />}
-              {activeTab === 'grammarTest' && <GrammarTest />}
-              {activeTab === 'fillBlanks' && <FillBlanks />}
-            </div>
-          </main>
-
-          <footer className="py-6 text-center text-slate-500 text-sm border-t border-slate-800/50 bg-slate-900/50 backdrop-blur-md shrink-0">
-            <p>HSK 2 NEW3.0 - Lesson 11</p>
-            <p className="mt-1">© 2026 Dilfuza Kāng lǎo shī (telegram@diffila)</p>
-          </footer>
         </div>
-      );
-    }
+    </nav>
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+    <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+        <!-- ==================== SECTION 1: FLASHCARDS ==================== -->
+        <section id="section-flashcards" class="tab-section space-y-6">
+            <!-- Filter & Controls Bar -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-200/80 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2" id="fc-filter-btns">
+                    <button onclick="filterFlashcards('all')" data-filter="all" class="fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors">Barchasi (37)</button>
+                    <button onclick="filterFlashcards(1)" data-filter="1" class="fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors">1-matn (8)</button>
+                    <button onclick="filterFlashcards(2)" data-filter="2" class="fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors">2-matn (7)</button>
+                    <button onclick="filterFlashcards(3)" data-filter="3" class="fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors">3-matn (10)</button>
+                    <button onclick="filterFlashcards(4)" data-filter="4" class="fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors">4-matn (12)</button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="fc-counter" class="text-sm font-bold text-brand-teal bg-brand-sand px-3 py-1.5 rounded-lg">1 / 37</span>
+                    <button onclick="shuffleFlashcards()" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs sm:text-sm font-semibold transition-colors">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 3 21 3 21 8"></polyline>
+                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                            <polyline points="21 16 21 21 16 21"></polyline>
+                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                            <line x1="4" y1="4" x2="9" y2="9"></line>
+                        </svg>
+                        <span>Aralashtirish</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3D Interactive Flashcard (NO bottom hint text per requirement 6) -->
+            <div class="max-w-xl mx-auto">
+                <div class="perspective-1000 w-full h-80 sm:h-96 cursor-pointer select-none" onclick="flipFlashcard()">
+                    <div id="flashcard-inner" class="relative w-full h-full transform-style-3d">
+                        <!-- FRONT FACE -->
+                        <div class="absolute inset-0 backface-hidden bg-white rounded-3xl shadow-lg border-2 border-stone-200/80 p-6 sm:p-8 flex flex-col items-center justify-center relative overflow-hidden">
+                            <!-- Top Badges -->
+                            <div class="absolute top-5 left-5 right-5 flex items-center justify-between">
+                                <span id="fc-text-badge" class="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-brand-teal/10 text-brand-teal">1-matn</span>
+                                <span id="fc-pos" class="text-xs font-semibold px-3 py-1 rounded-full bg-brand-sand text-stone-600">n.</span>
+                            </div>
+
+                            <!-- Word & Pinyin -->
+                            <!-- Word (Hanzi Only) -->
+                            <div class="text-center my-auto">
+                                <div id="fc-hanzi" class="text-6xl sm:text-7xl font-black font-zh text-brand-teal tracking-wide">房东</div>
+                            </div>
+
+                            <!-- Audio Pronunciation Button (Requirement 7) -->
+                            <div class="mt-4">
+                                <button id="fc-audio-front" onclick="event.stopPropagation(); speakCurrentFlashcard(this)"
+                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-teal hover:bg-brand-tealLight text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95"
+                                    aria-label="Talaffuzni eshitish">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                        <path class="wave-bar" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                        <path class="wave-bar" d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                    </svg>
+                                    <span>Talaffuz</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- BACK FACE -->
+                        <div class="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-brand-teal to-[#0B3945] text-white rounded-3xl shadow-lg p-6 sm:p-8 flex flex-col justify-between">
+                            <div class="flex items-center justify-between border-b border-white/15 pb-3">
+                                <div class="flex items-baseline gap-3">
+                                    <span id="fc-back-hanzi" class="text-2xl sm:text-3xl font-bold font-zh">房东</span>
+                                    <span id="fc-back-pinyin" class="text-sm sm:text-base text-amber-200 font-medium">fángdōng</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); speakCurrentFlashcard(this)"
+                                    class="p-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white transition-colors"
+                                    aria-label="Talaffuzni eshitish">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                        <path class="wave-bar" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                        <path class="wave-bar" d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Trilingual Translations: UZ, RU, EN -->
+                            <div class="space-y-3.5 my-auto">
+                                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider text-brand-gold mb-0.5">O'zbekcha (UZ)</div>
+                                    <div id="fc-uz" class="text-base sm:text-lg font-bold text-white">uy egasi</div>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider text-sky-300 mb-0.5">Русский (RU)</div>
+                                    <div id="fc-ru" class="text-sm sm:text-base font-medium text-white/95">хозяин / хозяйка квартиры</div>
+                                </div>
+                                <div class="bg-white/10 backdrop-blur-sm rounded-2xl p-3.5 border border-white/15">
+                                    <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-300 mb-0.5">English (EN)</div>
+                                    <div id="fc-en" class="text-sm sm:text-base font-medium text-white/95">landlord; landlady</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="mt-6 flex items-center justify-center gap-4">
+                    <button onclick="prevFlashcard()" class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-stone-100 text-stone-700 font-semibold shadow-sm border border-stone-200 transition-all active:scale-95">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        <span>Oldingi</span>
+                    </button>
+                    <button onclick="flipFlashcard()" class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-coral hover:bg-[#c5502f] text-white font-semibold shadow-md transition-all active:scale-95">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                        </svg>
+                        <span>Aylantirish</span>
+                    </button>
+                    <button onclick="nextFlashcard()" class="flex items-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-stone-100 text-stone-700 font-semibold shadow-sm border border-stone-200 transition-all active:scale-95">
+                        <span>Keyingi</span>
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Complete Vocabulary Quick Grid -->
+            <div class="pt-4">
+                <h2 class="text-lg font-bold text-brand-teal mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-brand-coral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>Barcha yangi so'zlar ro'yxati</span>
+                </h2>
+                <div id="vocab-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 2: VOCABULARY QUIZ (UZBEK PROMPT + HANZI ONLY + UZBEK OPTIONS) ==================== -->
+        <section id="section-vocab-quiz" class="tab-section hidden">
+            <div class="max-w-2xl mx-auto">
+                <!-- Quiz Header & SVG Progress Ring -->
+                <div class="bg-white rounded-3xl shadow-sm border border-stone-200 p-5 sm:p-6 mb-6 flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold text-brand-teal">So'z testi</h2>
+                        <p class="text-sm text-stone-500 mt-0.5">Xitoycha so'zning to'g'ri o'zbekcha tarjimasini toping (20 ta savol)</p>
+                    </div>
+                    <div class="relative w-16 h-16 flex-shrink-0">
+                        <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="26" fill="none" stroke="#E7E5E4" stroke-width="6"/>
+                            <circle id="vq-ring" cx="32" cy="32" r="26" fill="none" stroke="#2A9D8F" stroke-width="6"
+                                stroke-dasharray="163.36" stroke-dashoffset="163.36" stroke-linecap="round" class="transition-all duration-500"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-brand-teal" id="vq-ring-text">1/20</div>
+                    </div>
+                </div>
+
+                <!-- Quiz Card -->
+                <div id="vq-container" class="bg-white rounded-3xl shadow-md border border-stone-200 p-6 sm:p-8">
+                    <!-- Prompt ONLY in Uzbek (Requirement 8) -->
+                    <p class="text-sm sm:text-base font-semibold text-stone-600 text-center mb-4">
+                        Ushbu xitoycha so'zning o'zbekcha tarjimasini tanlang:
+                    </p>
+                    <!-- Word ONLY in Hanzi (Requirement 9) -->
+                    <div id="vq-word" class="text-center text-5xl sm:text-6xl font-black font-zh text-brand-teal py-6 bg-brand-cream rounded-2xl border border-stone-200/80 mb-6">
+                        房东
+                    </div>
+                    <!-- 4 Uzbek Translation Options -->
+                    <div id="vq-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <!-- Feedback Banner -->
+                    <div id="vq-feedback" class="hidden mt-5 p-4 rounded-2xl text-sm font-semibold text-center"></div>
+                    <!-- Next Button -->
+                    <div class="mt-6 flex justify-end">
+                        <button id="vq-next-btn" onclick="nextVocabQuestion()" class="hidden px-6 py-3 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-semibold shadow-sm transition-all">
+                            Keyingi savol →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Result Screen -->
+                <div id="vq-result" class="hidden bg-white rounded-3xl shadow-md border border-stone-200 p-8 text-center space-y-5">
+                    <div class="w-24 h-24 mx-auto">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <circle cx="50" cy="50" r="44" fill="#FAF8F5" stroke="#2A9D8F" stroke-width="6"/>
+                            <path d="M32 52 L45 65 L70 38" fill="none" stroke="#2A9D8F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-extrabold text-brand-teal">Test yakunlandi!</h3>
+                    <p id="vq-score-text" class="text-lg font-bold text-brand-coral">Natija: 0 / 20</p>
+                    <p id="vq-message" class="text-stone-600 text-sm"></p>
+                    <button onclick="initVocabQuiz()" class="px-6 py-3 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-semibold shadow-md transition-all">
+                        Qaytadan boshlash
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 3: DIALOGUES & TEXTS (ALL 4 TEXTS + AUDIO + UZ/RU/EN) ==================== -->
+        <section id="section-dialogues" class="tab-section hidden space-y-6">
+            <!-- Text Selector & Translation Toggles -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-stone-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap gap-2" id="dialogue-tabs">
+                    <button onclick="selectDialogue(0)" data-didx="0" class="d-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all">1-matn (Dialog)</button>
+                    <button onclick="selectDialogue(1)" data-didx="1" class="d-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all">2-matn (Dialog)</button>
+                    <button onclick="selectDialogue(2)" data-didx="2" class="d-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all">3-matn (Kundalik)</button>
+                    <button onclick="selectDialogue(3)" data-didx="3" class="d-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all">4-matn (Matn)</button>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="toggle-pinyin-btn" onclick="toggleDialoguePinyin()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-teal text-white transition-colors">Pinyin: Yoqilgan</button>
+                    <button id="toggle-trans-btn" onclick="toggleDialogueTrans()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-sage text-white transition-colors">Tarjima: Yoqilgan</button>
+                </div>
+            </div>
+
+            <!-- Active Dialogue / Text Card -->
+            <div id="dialogue-content" class="bg-white rounded-3xl shadow-md border border-stone-200 overflow-hidden">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 4: GRAMMAR EXPLANATIONS (SVG DIAGRAMS + UZ/RU/EN) ==================== -->
+        <section id="section-grammar" class="tab-section hidden space-y-6">
+            <div class="grid grid-cols-1 gap-6" id="grammar-cards-container">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 5: GRAMMAR QUIZ (HANZI ONLY - REQUIREMENT 11) ==================== -->
+        <section id="section-grammar-quiz" class="tab-section hidden">
+            <div class="max-w-2xl mx-auto">
+                <!-- Header (Hanzi Only inside Grammar Quiz!) -->
+                <div class="bg-white rounded-3xl shadow-sm border border-stone-200 p-5 sm:p-6 mb-6 flex items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold font-zh text-brand-teal">语法测试</h2>
+                        <p class="text-sm font-zh text-stone-500 mt-0.5">请选择最合适的词语或句子（共16题）</p>
+                    </div>
+                    <div class="relative w-16 h-16 flex-shrink-0">
+                        <svg class="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                            <circle cx="32" cy="32" r="26" fill="none" stroke="#E7E5E4" stroke-width="6"/>
+                            <circle id="gq-ring" cx="32" cy="32" r="26" fill="none" stroke="#D95D39" stroke-width="6"
+                                stroke-dasharray="163.36" stroke-dashoffset="163.36" stroke-linecap="round" class="transition-all duration-500"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-brand-teal" id="gq-ring-text">1/16</div>
+                    </div>
+                </div>
+
+                <!-- Grammar Question Card (Hanzi Only) -->
+                <div id="gq-container" class="bg-white rounded-3xl shadow-md border border-stone-200 p-6 sm:p-8">
+                    <div id="gq-tag" class="inline-block px-3 py-1 rounded-full bg-brand-teal/10 text-brand-teal text-xs font-bold font-zh mb-4">语法点</div>
+                    <div id="gq-question" class="text-lg sm:text-xl font-bold font-zh text-slate-800 leading-relaxed p-5 bg-brand-cream rounded-2xl border border-stone-200/80 mb-6">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div id="gq-options" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                    <div id="gq-feedback" class="hidden mt-5 p-4 rounded-2xl text-sm font-zh font-medium leading-relaxed"></div>
+                    <div class="mt-6 flex justify-end">
+                        <button id="gq-next-btn" onclick="nextGrammarQuestion()" class="hidden px-6 py-3 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-zh font-semibold shadow-sm transition-all">
+                            下一题 →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Grammar Quiz Result (Hanzi Only) -->
+                <div id="gq-result" class="hidden bg-white rounded-3xl shadow-md border border-stone-200 p-8 text-center space-y-5">
+                    <div class="w-24 h-24 mx-auto">
+                        <svg viewBox="0 0 100 100" class="w-full h-full">
+                            <circle cx="50" cy="50" r="44" fill="#FAF8F5" stroke="#D95D39" stroke-width="6"/>
+                            <path d="M32 52 L45 65 L70 38" fill="none" stroke="#D95D39" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-extrabold font-zh text-brand-teal">测试完成！</h3>
+                    <p id="gq-score-text" class="text-lg font-bold font-zh text-brand-coral">得分：0 / 16</p>
+                    <p id="gq-message" class="text-stone-600 font-zh text-sm"></p>
+                    <button onclick="initGrammarQuiz()" class="px-6 py-3 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-zh font-semibold shadow-md transition-all">
+                        重新测试
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION 6: EXERCISES (词语填空 & 短文填空) ==================== -->
+        <section id="section-exercises" class="tab-section hidden space-y-8">
+            <!-- Exercise Part 1: 选词填空 (1-5) -->
+            <div class="bg-white rounded-3xl shadow-md border border-stone-200 p-6 sm:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand-coral">1-mashq • 选词填空 (1–5)</span>
+                        <h2 class="text-xl font-extrabold text-brand-teal mt-0.5">Bo'sh joylarni mos so'zlar bilan to'ldiring</h2>
+                    </div>
+                    <span id="ex1-score" class="text-sm font-bold px-3.5 py-1.5 rounded-xl bg-brand-sand text-brand-teal hidden"></span>
+                </div>
+                <!-- Word Bank 1 -->
+                <div class="flex flex-wrap gap-2 mb-6 p-4 bg-brand-cream rounded-2xl border border-stone-200/80">
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">A 收拾</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">B 房租</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">C 入住</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">D 租</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">E 查看</span>
+                </div>
+                <div id="ex1-list" class="space-y-4"></div>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button onclick="checkExercise(1)" class="px-5 py-2.5 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-semibold text-sm shadow-sm transition-all">Tekshirish</button>
+                    <button onclick="resetExercise(1)" class="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-sm transition-all">Tozalash</button>
+                </div>
+            </div>
+
+            <!-- Exercise Part 2: 选词填空 (6-10) -->
+            <div class="bg-white rounded-3xl shadow-md border border-stone-200 p-6 sm:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand-coral">2-mashq • 选词填空 (6–10)</span>
+                        <h2 class="text-xl font-extrabold text-brand-teal mt-0.5">Dialoglardagi bo'sh joylarni to'ldiring</h2>
+                    </div>
+                    <span id="ex2-score" class="text-sm font-bold px-3.5 py-1.5 rounded-xl bg-brand-sand text-brand-teal hidden"></span>
+                </div>
+                <!-- Word Bank 2 -->
+                <div class="flex flex-wrap gap-2 mb-6 p-4 bg-brand-cream rounded-2xl border border-stone-200/80">
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">A 周围</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">B 建议</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">C 查找</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">D 客厅</span>
+                    <span class="px-3 py-1.5 bg-white rounded-xl border border-stone-200 font-zh font-bold text-brand-teal text-sm shadow-sm">E 接着</span>
+                </div>
+                <div id="ex2-list" class="space-y-4"></div>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button onclick="checkExercise(2)" class="px-5 py-2.5 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-semibold text-sm shadow-sm transition-all">Tekshirish</button>
+                    <button onclick="resetExercise(2)" class="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-sm transition-all">Tozalash</button>
+                </div>
+            </div>
+
+            <!-- Exercise Part 3: 选择合适的内容完成短文 -->
+            <div class="bg-white rounded-3xl shadow-md border border-stone-200 p-6 sm:p-8">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand-coral">3-mashq • 选择合适的内容完成短文</span>
+                        <h2 class="text-xl font-extrabold text-brand-teal mt-0.5">Matnni mos jumlalar bilan to'ldiring</h2>
+                    </div>
+                    <span id="ex3-score" class="text-sm font-bold px-3.5 py-1.5 rounded-xl bg-brand-sand text-brand-teal hidden"></span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6 p-4 bg-brand-cream rounded-2xl border border-stone-200/80 text-sm font-zh font-semibold text-brand-teal">
+                    <div class="bg-white px-3.5 py-2 rounded-xl border border-stone-200">A 就给房东打了电话</div>
+                    <div class="bg-white px-3.5 py-2 rounded-xl border border-stone-200">B 觉得房子很不错</div>
+                    <div class="bg-white px-3.5 py-2 rounded-xl border border-stone-200">C 她决定在公司附近租个房子</div>
+                    <div class="bg-white px-3.5 py-2 rounded-xl border border-stone-200">D 但是很干净</div>
+                </div>
+                <div id="ex3-passage" class="font-zh text-base sm:text-lg leading-loose text-slate-800 bg-stone-50 p-5 rounded-2xl border border-stone-200">
+                    <!-- Rendered by JS -->
+                </div>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <button onclick="checkExercise(3)" class="px-5 py-2.5 rounded-xl bg-brand-teal hover:bg-brand-tealLight text-white font-semibold text-sm shadow-sm transition-all">Tekshirish</button>
+                    <button onclick="resetExercise(3)" class="px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold text-sm transition-all">Tozalash</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== FOOTER (REQUIREMENT 4) ==================== -->
+    <footer class="bg-brand-teal text-white/90 mt-12 border-t border-white/10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center space-y-1">
+            <p class="text-sm sm:text-base font-bold tracking-wide text-white">HSK3.0 4 Standard Course - Lesson 2</p>
+            <p class="text-xs sm:text-sm text-amber-200/95">© 2026 Dilfuza Kāng lǎo shī (telegram@diffila)</p>
+        </div>
+    </footer>
+
+    <!-- ==================== APPLICATION DATA & LOGIC ==================== -->
+    <script>
+        // =========================================================================
+        // 1. VOCABULARY DATA (ALL 37 NEW WORDS FROM LESSON 2)
+        // =========================================================================
+        const VOCAB_DATA = [
+            // Text 1 (1-8)
+            { id: 1, text: 1, hanzi: "房东", pinyin: "fángdōng", pos: "n.", uz: "uy egasi", ru: "хозяин / хозяйка квартиры", en: "landlord; landlady" },
+            { id: 2, text: 1, hanzi: "出租", pinyin: "chūzū", pos: "v.", uz: "ijaraga bermoq", ru: "сдавать в аренду", en: "rent out" },
+            { id: 3, text: 1, hanzi: "房租", pinyin: "fángzū", pos: "n.", uz: "ijara haqi", ru: "арендная плата", en: "house rent" },
+            { id: 4, text: 1, hanzi: "收拾", pinyin: "shōushi", pos: "v.", uz: "yig'ishtirmoq, tartibga solmoq", ru: "убирать, приводить в порядок", en: "tidy up; clear away" },
+            { id: 5, text: 1, hanzi: "租", pinyin: "zū", pos: "v.", uz: "ijaraga olmoq", ru: "арендовать, снимать", en: "rent" },
+            { id: 6, text: 1, hanzi: "嗯", pinyin: "ng", pos: "int.", uz: "ha, xo'p", ru: "ага, угу", en: "mhm; yes" },
+            { id: 7, text: 1, hanzi: "亮", pinyin: "liàng", pos: "adj./v.", uz: "yorug'; charaqlamoq", ru: "светлый, яркий; светить", en: "bright; shine" },
+            { id: 8, text: 1, hanzi: "就是", pinyin: "jiùshì", pos: "part.", uz: "bo'ldi, xolos (“了” bilan gap oxirida)", ru: "и всё, да и только (частица с “了”)", en: "(used with “了” at sentence end for force)" },
+
+            // Text 2 (9-15)
+            { id: 9, text: 2, hanzi: "种", pinyin: "zhòng", pos: "v.", uz: "ekmoq", ru: "сажать (растения)", en: "plant" },
+            { id: 10, text: 2, hanzi: "周围", pinyin: "zhōuwéi", pos: "n.", uz: "atrof, tevarak-atrof", ru: "окрестности, вокруг", en: "surroundings" },
+            { id: 11, text: 2, hanzi: "不过", pinyin: "búguò", pos: "conj.", uz: "lekin, biroq", ru: "но, однако", en: "but; however" },
+            { id: 12, text: 2, hanzi: "毕业", pinyin: "bìyè", pos: "v.", uz: "o'qishni bitirmoq", ru: "окончить учебное заведение", en: "graduate" },
+            { id: 13, text: 2, hanzi: "恐怕", pinyin: "kǒngpà", pos: "adv.", uz: "qo'rqamanki, balki", ru: "боюсь, что; пожалуй", en: "perhaps; I'm afraid" },
+            { id: 14, text: 2, hanzi: "热闹", pinyin: "rènao", pos: "v./adj./n.", uz: "gavjum, xursandchilik qilmoq", ru: "оживлённый, шумный; веселиться", en: "bustling; lively; have a jolly time" },
+            { id: 15, text: 2, hanzi: "入住", pinyin: "rùzhù", pos: "v.", uz: "ko'chib kirmoq, joylashmoq", ru: "въехать (в дом); заселиться", en: "move into (a new house); check into" },
+
+            // Text 3 (16-25)
+            { id: 16, text: 3, hanzi: "日记", pinyin: "rìjì", pos: "n.", uz: "kundalik", ru: "дневник", en: "diary" },
+            { id: 17, text: 3, hanzi: "顺利", pinyin: "shùnlì", pos: "adj.", uz: "muvaffaqiyatli, silliq", ru: "успешно, гладко", en: "successful; smooth" },
+            { id: 18, text: 3, hanzi: "并", pinyin: "bìng", pos: "conj./adv.", uz: "va, shuningdek; aslo (inkor oldidan)", ru: "и, а также; вовсе (перед отрицанием)", en: "and; what's more; actually" },
+            { id: 19, text: 3, hanzi: "客厅", pinyin: "kètīng", pos: "n.", uz: "mehmonxona (zal)", ru: "гостиная", en: "living room" },
+            { id: 20, text: 3, hanzi: "台", pinyin: "tái", pos: "m.", uz: "ta (texnika va jihozlar hisob so'zi)", ru: "счётное слово для техники и приборов", en: "measure word for machinery/appliances" },
+            { id: 21, text: 3, hanzi: "厨房", pinyin: "chúfáng", pos: "n.", uz: "oshxona", ru: "кухня", en: "kitchen" },
+            { id: 22, text: 3, hanzi: "平常", pinyin: "píngcháng", pos: "n./adj.", uz: "odatda, oddiy kunlar", ru: "обычно, повседневный", en: "usual days; usual; ordinary" },
+            { id: 23, text: 3, hanzi: "基本上", pinyin: "jīběnshàng", pos: "adv.", uz: "asosan, umuman olganda", ru: "в основном, по сути", en: "in general; basically" },
+            { id: 24, text: 3, hanzi: "整个", pinyin: "zhěnggè", pos: "adj.", uz: "butun, barcha", ru: "весь, целый", en: "whole" },
+            { id: 25, text: 3, hanzi: "毛巾", pinyin: "máojīn", pos: "n.", uz: "sochiq", ru: "полотенце", en: "towel" },
+
+            // Text 4 (26-37)
+            { id: 26, text: 4, hanzi: "建议", pinyin: "jiànyì", pos: "n./v.", uz: "maslahat, taklif; maslahat bermoq", ru: "совет, предложение; советовать", en: "suggestion; suggest" },
+            { id: 27, text: 4, hanzi: "查看", pinyin: "chákàn", pos: "v.", uz: "tekshirmoq, ko'zdan kechirmoq", ru: "просматривать, проверять", en: "check; examine" },
+            { id: 28, text: 4, hanzi: "信息", pinyin: "xìnxī", pos: "n.", uz: "ma'lumot, axborot, xabar", ru: "информация, сообщение", en: "information; message" },
+            { id: 29, text: 4, hanzi: "查找", pinyin: "cházhǎo", pos: "v.", uz: "qidirmoq, izlab topmoq", ru: "искать, разыскивать", en: "look for; search" },
+            { id: 30, text: 4, hanzi: "接着", pinyin: "jiēzhe", pos: "adv./v.", uz: "so'ngra, davom etmoq", ru: "затем, далее; продолжать", en: "after that; go on (with)" },
+            { id: 31, text: 4, hanzi: "同时", pinyin: "tóngshí", pos: "conj./n.", uz: "shu bilan birga, bir vaqtda", ru: "одновременно, в то же время", en: "in addition; same time" },
+            { id: 32, text: 4, hanzi: "位置", pinyin: "wèizhì", pos: "n.", uz: "joylashuv, o'rin", ru: "местоположение, позиция", en: "location" },
+            { id: 33, text: 4, hanzi: "价格", pinyin: "jiàgé", pos: "n.", uz: "narx", ru: "цена", en: "price" },
+            { id: 34, text: 4, hanzi: "理想", pinyin: "lǐxiǎng", pos: "adj./n.", uz: "ideal, orzu", ru: "идеальный; идеал", en: "ideal" },
+            { id: 35, text: 4, hanzi: "由于", pinyin: "yóuyú", pos: "conj./prep.", uz: "sababli, tufayli, chunki", ru: "из-за, вследствие, поскольку", en: "because; because of" },
+            { id: 36, text: 4, hanzi: "工资", pinyin: "gōngzī", pos: "n.", uz: "maosh, ish haqi", ru: "зарплата", en: "wage; salary; pay" },
+            { id: 37, text: 4, hanzi: "感", pinyin: "gǎn", pos: "suf.", uz: "hissiyot, tuyg'u (qo'shimcha)", ru: "чувство, ощущение (суффикс)", en: "sense" }
+        ];
+
+        // =========================================================================
+        // 2. ALL 4 TEXTS / DIALOGUES WITH TRILINGUAL TRANSLATIONS
+        // =========================================================================
+        const DIALOGUES_DATA = [
+            {
+                titleZh: "课文 1",
+                contextZh: "白家月想租房，李文陪白家月去看房。",
+                contextUz: "Bay Szyayue kvartira ijaraga olmoqchi, Li Ven unga hamrohlik qilib uyni ko'rgani keldi.",
+                contextRu: "Бай Цзяюэ хочет снять квартиру, Ли Вэнь сопровождает её на осмотр.",
+                contextEn: "Bai Jiayue wanted to rent an apartment, and Li Wen was accompanying her to view one.",
+                type: "dialogue",
+                lines: [
+                    {
+                        speaker: "房东",
+                        speakerUz: "Uy egasi",
+                        zh: "请进！我给你们介绍一下，这个房子有两个房间，那个大房间出租，房租每月5500元。现在已经收拾好了，想租的话，今天就可以搬进来。",
+                        pinyin: "Qǐng jìn! Wǒ gěi nǐmen jièshào yíxià, zhège fángzi yǒu liǎng gè fángjiān, nàge dà fángjiān chūzū, fángzū měi yuè 5500 yuán. Xiànzài yǐjīng shōushi hǎo le, xiǎng zū de huà, jīntiān jiù kěyǐ bān jìnlái.",
+                        uz: "Marhamat, kiringlar! Sizlarga tanishtirib o'tay: bu kvartirada ikkita xona bor, ana u katta xona ijaraga beriladi, ijara haqi oyiga 5500 yuan. Hozir allaqachon yig'ishtirib qo'yilgan, agar ijaraga olmoqchi bo'lsangiz, bugunoq ko'chib kirishingiz mumkin.",
+                        ru: "Входите, пожалуйста! Я вам всё покажу: в этой квартире две комнаты, та большая комната сдаётся, арендная плата 5500 юаней в месяц. Сейчас уже всё убрано, если хотите снять, можете въехать уже сегодня.",
+                        en: "Please come in! Let me show you around. This apartment has two rooms; that big room is for rent at 5,500 yuan per month. It's already tidied up, so if you want to rent it, you can move in today."
+                    },
+                    {
+                        speaker: "白家月",
+                        speakerUz: "Bay Szyayue",
+                        zh: "嗯，这个房间真不小，还挺亮。小区离我们学校也不远。",
+                        pinyin: "Ng, zhège fángjiān zhēn bù xiǎo, hái tǐng liàng. Xiǎoqū lí wǒmen xuéxiào yě bù yuǎn.",
+                        uz: "Ha, bu xona rostdan ham kichkina emas, yana ancha yorug' ekan. Turar-joy majmuasi maktabimizdan ham uzoq emas.",
+                        ru: "Ага, эта комната действительно немаленькая и довольно светлая. Жилой комплекс тоже недалеко от нашего университета.",
+                        en: "Mhm, this room is really not small, and it's quite bright. The residential complex isn't far from our school either."
+                    },
+                    {
+                        speaker: "房东",
+                        speakerUz: "Uy egasi",
+                        zh: "是的，我们小区离地铁站也很近，生活上很方便。如果决定租了，告诉我就是了。",
+                        pinyin: "Shì de, wǒmen xiǎoqū lí dìtiězhàn yě hěn jìn, shēnghuó shàng hěn fāngbiàn. Rúguǒ juédìng zū le, gàosu wǒ jiùshì le.",
+                        uz: "Ha, majmuamiz metro bekatiga ham juda yaqin, yashash uchun juda qulay. Agar ijaraga olishga qaror qilsangiz, menga aytishingiz kifoya.",
+                        ru: "Да, наш комплекс также очень близко к станции метро, жить здесь очень удобно. Если решите снять, просто скажите мне.",
+                        en: "Yes, our complex is also very close to the subway station, making daily life very convenient. If you decide to rent it, just let me know."
+                    },
+                    {
+                        speaker: "白家月",
+                        speakerUz: "Bay Szyayue",
+                        zh: "好的，我们再去看看外边的环境。",
+                        pinyin: "Hǎo de, wǒmen zài qù kànkan wàibian de huánjìng.",
+                        uz: "Xo'p, biz yana tashqaridagi muhitni ham ko'rib chiqaylik.",
+                        ru: "Хорошо, мы ещё пойдём посмотрим обстановку снаружи.",
+                        en: "Okay, let's go check out the surroundings outside as well."
+                    }
+                ]
+            },
+            {
+                titleZh: "课文 2",
+                contextZh: "在小区里，白家月和李文继续查看周围环境。",
+                contextUz: "Turar-joy majmuasida Bay Szyayue va Li Ven atrof-muhitni ko'zdan kechirishda davom etishmoqda.",
+                contextRu: "В жилом комплексе Бай Цзяюэ и Ли Вэнь продолжают осматривать окрестности.",
+                contextEn: "In the neighborhood, Bai Jiayue and Li Wen continued to check out the surroundings.",
+                type: "dialogue",
+                lines: [
+                    {
+                        speaker: "李文",
+                        speakerUz: "Li Ven",
+                        zh: "家月，你看，那边还有个小花园。",
+                        pinyin: "Jiāyuè, nǐ kàn, nàbian hái yǒu gè xiǎo huāyuán.",
+                        uz: "Szyayue, qara, u tomonda yana kichkina bog' ham bor ekan.",
+                        ru: "Цзяюэ, посмотри, вон там ещё есть небольшой сад.",
+                        en: "Jiayue, look, there's also a small garden over there."
+                    },
+                    {
+                        speaker: "白家月",
+                        speakerUz: "Bay Szyayue",
+                        zh: "嗯，这个小区到处是花，还种了不少树，周围也很安静。",
+                        pinyin: "Ng, zhège xiǎoqū dàochù shì huā, hái zhòng le bùshǎo shù, zhōuwéi yě hěn ānjìng.",
+                        uz: "Ha, bu majmuada hamma yer gullar bilan to'la, yana anchagina daraxt ham ekilgan, atrof ham juda tinch.",
+                        ru: "Угу, в этом комплексе повсюду цветы, посажено немало деревьев, и вокруг очень тихо.",
+                        en: "Mhm, there are flowers everywhere in this complex, quite a few trees are planted, and the surroundings are very quiet."
+                    },
+                    {
+                        speaker: "李文",
+                        speakerUz: "Li Ven",
+                        zh: "是啊！这个小区的环境真不错，不过我听说，附近有十几家公司，很多刚毕业的学生都租住在这里。周末他们可能会玩到很晚，恐怕会影响你休息。",
+                        pinyin: "Shì a! Zhège xiǎoqū de huánjìng zhēn búcuò, búguò wǒ tīngshuō, fùjìn yǒu shí jǐ jiā gōngsī, hěn duō gāng bìyè de xuésheng dōu zūzhù zài zhèlǐ. Zhōumò tāmen kěnéng huì wán dào hěn wǎn, kǒngpà huì yǐngxiǎng nǐ xiūxi.",
+                        uz: "Ha-ya! Bu majmuaning muhiti rostdan yaxshi, biroq eshitishimcha, yaqin atrofda o'ndan ortiq kompaniya bor ekan, yaqinda o'qishni bitirgan ko'plab talabalar shu yerda ijarada yashashadi. Dam olish kunlari ular juda kechgacha o'ynab o'tirishlari mumkin, qo'rqamanki, dam olishingga xalaqit beradi.",
+                        ru: "Да! Обстановка здесь действительно отличная, но я слышал, что поблизости больше десяти компаний, и многие недавно выпустившиеся студенты снимают здесь жильё. По выходным они могут гулять допоздна, боюсь, это помешает твоему отдыху.",
+                        en: "Yes! The environment here is really nice, however I heard there are over a dozen companies nearby, and many recent graduates rent here. On weekends they might stay up late having fun, which I'm afraid might affect your rest."
+                    },
+                    {
+                        speaker: "白家月",
+                        speakerUz: "Bay Szyayue",
+                        zh: "没关系，我还想多认识一些朋友，和他们一起玩呢。",
+                        pinyin: "Méiguānxi, wǒ hái xiǎng duō rènshi yìxiē péngyou, hé tāmen yìqǐ wán ne.",
+                        uz: "Hechqisi yo'q, men ham yana ko'proq do'stlar orttirib, ular bilan birga vaqt o'tkazishni xohlayman.",
+                        ru: "Ничего страшного, я как раз хочу познакомиться с новыми друзьями и проводить с ними время.",
+                        en: "That's fine, I actually want to make more friends and hang out with them."
+                    },
+                    {
+                        speaker: "李文",
+                        speakerUz: "Li Ven",
+                        zh: "是呢，大家可以一起热闹热闹。",
+                        pinyin: "Shì ne, dàjiā kěyǐ yìqǐ rènao rènao.",
+                        uz: "To'g'ri, hamma birga xursandchilik qilishi mumkin.",
+                        ru: "Точно, все могут вместе повеселиться.",
+                        en: "True, everyone can have a lively time together."
+                    },
+                    {
+                        speaker: "白家月",
+                        speakerUz: "Bay Szyayue",
+                        zh: "这里房租合适，环境很好，而且房东也热情，所以我决定租这个房子了，明天就入住新家。",
+                        pinyin: "Zhèlǐ fángzū héshì, huánjìng hěn hǎo, érqiě fángdōng yě rèqíng, suǒyǐ wǒ juédìng zū zhège fángzi le, míngtiān jiù rùzhù xīn jiā.",
+                        uz: "Bu yerning ijara haqi mos, muhiti juda yaxshi, buning ustiga uy egasi ham samimiy ekan, shuning uchun shu kvartirani ijaraga olishga qaror qildim, ertagayoq yangi uyga ko'chib kiraman.",
+                        ru: "Здесь подходящая арендная плата, отличная обстановка, к тому же хозяин очень радушный, поэтому я решила снять эту квартиру и завтра же перееду в новый дом.",
+                        en: "The rent here is reasonable, the environment is great, and the landlord is warm-hearted, so I've decided to rent this apartment and move into my new home tomorrow."
+                    }
+                ]
+            },
+            {
+                titleZh: "课文 3（日记）",
+                contextZh: "搬进新家后，白家月很开心，写了一篇日记。",
+                contextUz: "Yangi uyga ko'chib kirgach, Bay Szyayue juda xursand bo'ldi va kundalik yozdi.",
+                contextRu: "Переехав в новый дом, Бай Цзяюэ очень обрадовалась и написала запись в дневнике.",
+                contextEn: "After moving into her new home, Bai Jiayue was very happy and wrote a diary entry.",
+                type: "passage",
+                lines: [
+                    {
+                        speaker: "8月25日，晴",
+                        speakerUz: "25-avgust, quyoshli",
+                        zh: "昨天我顺利租到了合适的房子，今天李文帮我搬家。搬进去的时候，房东又向我介绍了一下房子里的东西，并告诉我这些东西怎么用。",
+                        pinyin: "Zuótiān wǒ shùnlì zūdào le héshì de fángzi, jīntiān Lǐ Wén bāng wǒ bānjiā. Bān jìnqù de shíhou, fángdōng yòu xiàng wǒ jièshào le yíxià fángzi lǐ de dōngxi, bìng gàosu wǒ zhèxiē dōngxi zěnme yòng.",
+                        uz: "Kecha muvaffaqiyatli tarzda mos kvartira ijaraga oldim, bugun Li Ven menga ko'chishga yordam berdi. Ko'chib kirayotganimda uy egasi menga yana uy ichidagi narsalarni tanishtirdi va ulardan qanday foydalanishni tushuntirdi.",
+                        ru: "Вчера я успешно сняла подходящую квартиру, а сегодня Ли Вэнь помог мне переехать. Когда я въезжала, хозяин ещё раз показал мне вещи в квартире и объяснил, как ими пользоваться.",
+                        en: "Yesterday I smoothly rented a suitable apartment, and today Li Wen helped me move. When I moved in, the landlord introduced the things in the apartment again and told me how to use them."
+                    },
+                    {
+                        speaker: "房间介绍",
+                        speakerUz: "Xonalar tavsifi",
+                        zh: "我看了一下，客厅里有椅子、沙发，还有一台大电视；厨房里有冰箱和一些做饭用的东西，不过，我平常主要在学校食堂吃，基本上不做饭。我租的房间里，除了一张床以外，还有一台空调、一张书桌和一把椅子。",
+                        pinyin: "Wǒ kàn le yíxià, kètīng lǐ yǒu yǐzi, shāfā, hái yǒu yì tái dà diànshì; chúfáng lǐ yǒu bīngxiāng hé yìxiē zuòfàn yòng de dōngxi, búguò, wǒ píngcháng zhǔyào zài xuéxiào shítáng chī, jīběnshàng bú zuòfàn. Wǒ zū de fángjiān lǐ, chúle yì zhāng chuáng yǐwài, hái yǒu yì tái kōngtiáo, yì zhāng shūzhuō hé yì bǎ yǐzi.",
+                        uz: "Ko'zdan kechirib chiqdim: mehmonxonada stullar, divan va katta televizor bor; oshxonada muzlatkich va ovqat pishirish uchun kerakli narsalar bor, biroq men odatda asosan maktab oshxonasida ovqatlanaman, deyarli ovqat pishirmayman. Men ijaraga olgan xonada bir karavotdan tashqari, bir konditsioner, bir yozuv stoli va bir stul ham bor.",
+                        ru: "Я осмотрелась: в гостиной есть стулья, диван и большой телевизор; на кухне есть холодильник и кое-что для готовки, правда, обычно я ем в университетской столовой и почти не готовлю. В комнате, которую я сняла, помимо кровати, есть кондиционер, письменный стол и стул.",
+                        en: "I took a look around: in the living room there are chairs, a sofa, and a big TV; in the kitchen there's a fridge and some cooking utensils, though I usually eat at the school cafeteria and basically don't cook. In the room I rented, besides a bed, there is an air conditioner, a desk, and a chair."
+                    },
+                    {
+                        speaker: "准备购物",
+                        speakerUz: "Xarid rejasi",
+                        zh: "看完整个房子后，我准备再去买几条毛巾，其他东西还不需要。",
+                        pinyin: "Kàn wán zhěnggè fángzi hòu, wǒ zhǔnbèi zài qù mǎi jǐ tiáo máojīn, qítā dōngxi hái bù xūyào.",
+                        uz: "Butun uyni ko'rib chiqqach, yana bir nechta sochiq sotib olishga tayyorlandim, boshqa narsalar hozircha kerak emas.",
+                        ru: "Осмотрев всю квартиру, я собралась купить ещё несколько полотенец, остальные вещи пока не нужны.",
+                        en: "After looking through the whole apartment, I plan to go buy a few towels; I don't need anything else for now."
+                    }
+                ]
+            },
+            {
+                titleZh: "课文 4（怎样租到合适的房子）",
+                contextZh: "怎样租到合适的房子",
+                contextUz: "Qanday qilib mos kvartirani ijaraga olish mumkin?",
+                contextRu: "Как снять подходящую квартиру",
+                contextEn: "How to Rent a Suitable Apartment",
+                type: "passage",
+                lines: [
+                    {
+                        speaker: "第一段",
+                        speakerUz: "1-xatboshi",
+                        zh: "在李文的帮助下，白家月租到了合适的房子。对白家月来说，这次租房并不容易。根据李文的建议，她先在租房网站和App上查看有关信息，查找合适的房子，接着又去看了看房子，同时了解房子周围的环境。她看了好几个房子，才找到一个位置、环境和价格都合适的，最后顺利租到了理想的房子。",
+                        pinyin: "Zài Lǐ Wén de bāngzhù xià, Bái Jiāyuè zūdào le héshì de fángzi. Duì Bái Jiāyuè láishuō, zhè cì zūfáng bìng bù róngyì. Gēnjù Lǐ Wén de jiànyì, tā xiān zài zūfáng wǎngzhàn hé App shàng chákàn yǒuguān xìnxī, cházhǎo héshì de fángzi, jiēzhe yòu qù kàn le kàn fángzi, tóngshí liǎojiě fángzi zhōuwéi de huánjìng. Tā kàn le hǎojǐ gè fángzi, cái zhǎodào yígè wèizhì, huánjìng hé jiàgé dōu héshì de, zuìhòu shùnlì zūdào le lǐxiǎng de fángzi.",
+                        uz: "Li Venning yordami bilan Bay Szyayue mos kvartira ijaraga oldi. Bay Szyayue uchun bu safar uy ijaraga olish hech ham oson bo'lmadi. Li Venning maslahatiga ko'ra, u avval ijara veb-saytlari va ilovalarida tegishli ma'lumotlarni ko'zdan kechirib, mos uylarni qidirdi, so'ngra borib uylarni ko'rdi va shu bilan birga uy atrofidagi muhitni ham o'rgandi. U bir nechta uyni ko'rib chiqqachgina, joylashuvi, muhiti va narxi ham mos keladiganini topdi va nihoyat muvaffaqiyatli tarzda ideal uyni ijaraga oldi.",
+                        ru: "С помощью Ли Вэня Бай Цзяюэ сняла подходящую квартиру. Для Бай Цзяюэ снять жильё в этот раз было совсем непросто. По совету Ли Вэня она сначала просмотрела информацию на сайтах и в приложениях по аренде, поискала подходящие варианты, затем поехала посмотреть квартиры и одновременно изучила окрестности. Она посмотрела несколько квартир, прежде чем нашла ту, где подходили и расположение, и обстановка, и цена, и в итоге успешно сняла идеальное жильё.",
+                        en: "With Li Wen's help, Bai Jiayue rented a suitable apartment. For her, renting this time was not easy at all. Following Li Wen's advice, she first checked relevant information on rental websites and apps to look for suitable apartments, then went to view them while learning about the surroundings. After viewing several places, she finally found one with a suitable location, environment, and price, smoothly renting her ideal apartment."
+                    },
+                    {
+                        speaker: "第二段",
+                        speakerUz: "2-xatboshi",
+                        zh: "租房的时候，李文告诉白家月，在中国，由于很多刚工作的年轻人工资还不太高，所以他们一开始也不买房，都选择租房。工作几年后，不少人就会买房，因为大家一直觉得，有房才有家，有自己的房子会更有安全感。",
+                        pinyin: "Zūfáng de shíhou, Lǐ Wén gàosu Bái Jiāyuè, zài Zhōngguó, yóuyú hěn duō gāng gōngzuò de niánqīngrén gōngzī hái bú tài gāo, suǒyǐ tāmen yì kāishǐ yě bù mǎifáng, dōu xuǎnzé zūfáng. Gōngzuò jǐ nián hòu, bùshǎo rén jiù huì mǎifáng, yīnwèi dàjiā yìzhí juéde, yǒu fáng cái yǒu jiā, yǒu zìjǐ de fángzi huì gèng yǒu ānquángǎn.",
+                        uz: "Uy ijaraga olayotganda Li Ven Bay Szyayuega shunday dedi: Xitoyda endigina ish boshlagan ko'plab yoshlarning maoshi hali unchalik yuqori bo'lmaganligi sababli, ular boshida uy sotib olmaydilar, balki ijaraga olishni tanlaydilar. Bir necha yil ishlagandan so'ng, anchagina odamlar uy sotib oladi, chunki hamma doimo «uyi borning oilasi (vatani) bor, o'z uyiga ega bo'lish ko'proq xavfsizlik hissini beradi» deb hisoblaydi.",
+                        ru: "Во время поиска жилья Ли Вэнь рассказал Бай Цзяюэ, что в Китае, поскольку у многих молодых людей, только начавших работать, зарплата ещё не очень высокая, поначалу они не покупают жильё, а предпочитают снимать. Проработав несколько лет, многие покупают квартиру, ведь все считают: есть свой дом — есть семья, а собственное жильё даёт больше чувства защищённости.",
+                        en: "While renting, Li Wen told Bai Jiayue that in China, because many young people who just started working don't earn high salaries yet, they don't buy a house at first and choose to rent. After working for a few years, many people buy an apartment, because everyone has always felt that having a house makes a home, and owning your own home brings a greater sense of security."
+                    }
+                ]
+            }
+        ];
+
+        // =========================================================================
+        // 3. GRAMMAR EXPLANATIONS (ALL 4 POINTS + SVG DIAGRAMS + UZ/RU/EN)
+        // =========================================================================
+        const GRAMMAR_DATA = [
+            {
+                id: 1,
+                titleZh: "1. 固定格式“×就是了”",
+                badgeUz: "Qat'iy ishonch va yengillik formulasi",
+                svgDiagram: `
+                    <svg viewBox="0 0 420 76" class="w-full max-w-md h-auto" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="14" width="170" height="48" rx="12" fill="#0F4C5C"/>
+                        <text x="93" y="43" text-anchor="middle" fill="#FFFFFF" font-size="16" font-weight="700" font-family="Noto Sans SC, sans-serif">动词 / 短语 (×)</text>
+                        <path d="M 186 38 L 222 38" stroke="#D95D39" stroke-width="3" stroke-linecap="round"/>
+                        <polygon points="220,31 232,38 220,45" fill="#D95D39"/>
+                        <rect x="240" y="14" width="170" height="48" rx="12" fill="#D95D39"/>
+                        <text x="325" y="43" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="800" font-family="Noto Sans SC, sans-serif">就是了</text>
+                    </svg>
+                `,
+                expZh: "固定格式“×就是了”用于口语中，在句子末尾表示肯定。",
+                expUz: "“×就是了” turg'un iborasi og'zaki nutqda gapning oxirida ishlatilib, qat'iy tasdiq, ishonch yoki «shuni qilsangiz bo'ldi / kifoya» ma'nosini bildiradi.",
+                expRu: "Устойчивая конструкция «×就是了» используется в разговорной речи в конце предложения для выражения утверждения, уверенности («и всё», «просто сделай это»).",
+                expEn: "The fixed pattern “×就是了” is used in spoken Chinese at the end of a sentence to indicate affirmation and reassurance ('just do X, that's all').",
+                examples: [
+                    {
+                        zh: "如果决定租了，告诉我就是了。",
+                        pinyin: "Rúguǒ juédìng zū le, gàosu wǒ jiùshì le.",
+                        uz: "Agar ijaraga olishga qaror qilsangiz, menga aytishingiz kifoya.",
+                        ru: "Если решите снять, просто скажите мне.",
+                        en: "If you decide to rent it, just let me know."
+                    },
+                    {
+                        zh: "我一定能办到，您放心就是了。",
+                        pinyin: "Wǒ yídìng néng bàndào, nín fàngxīn jiùshì le.",
+                        uz: "Men albatta uddalayman, xotirjam bo'ling.",
+                        ru: "Я обязательно справлюсь, можете не волноваться.",
+                        en: "I can definitely do it, just rest assured."
+                    },
+                    {
+                        zh: "这次考得不好没关系，下次努力就是了。",
+                        pinyin: "Zhè cì kǎo de bù hǎo méiguānxi, xià cì nǔlì jiùshì le.",
+                        uz: "Bu safar imtihonni yaxshi topshirmaganing hechqisi yo'q, keyingi safar harakat qilsang bo'ldi.",
+                        ru: "Ничего страшного, что в этот раз сдал плохо, в следующий раз просто постарайся.",
+                        en: "It doesn't matter that you didn't do well this time, just work harder next time."
+                    }
+                ]
+            },
+            {
+                id: 2,
+                titleZh: "2. 转折复句“……，不过……”",
+                badgeUz: "Yumshoq zidlov bog'lovchisi",
+                svgDiagram: `
+                    <svg viewBox="0 0 460 76" class="w-full max-w-lg h-auto" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="14" width="145" height="48" rx="12" fill="#2A9D8F"/>
+                        <text x="78" y="43" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="Noto Sans SC, sans-serif">前一分句 (+)</text>
+                        <path d="M 157 38 L 181 38" stroke="#64748B" stroke-width="2.5"/>
+                        <rect x="184" y="14" width="92" height="48" rx="12" fill="#E9C46A"/>
+                        <text x="230" y="44" text-anchor="middle" fill="#0F4C5C" font-size="18" font-weight="800" font-family="Noto Sans SC, sans-serif">不过</text>
+                        <path d="M 282 38 L 306 38" stroke="#64748B" stroke-width="2.5"/>
+                        <rect x="309" y="14" width="145" height="48" rx="12" fill="#0F4C5C"/>
+                        <text x="381" y="43" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="Noto Sans SC, sans-serif">转折/补充 (–)</text>
+                    </svg>
+                `,
+                expZh: "连词“不过”用在两个分句中后一个分句的开头，表示转折（语气比“但是”更委婉）。",
+                expUz: "“不过” (lekin, biroq) bog'lovchisi qo'shma gapdagi ikkinchi sodda gapning boshida kelib, zidlik yoki qo'shimcha cheklovni bildiradi (ohangi “但是” ga qaraganda yumshoqroq).",
+                expRu: "Союз «不过» (но, однако) ставится в начале второй части сложного предложения и выражает мягкое противопоставление или оговорку.",
+                expEn: "The conjunction “不过” (but; however) is placed at the beginning of the second clause to indicate a mild turn or contrast in meaning.",
+                examples: [
+                    {
+                        zh: "这个小区的环境真不错，不过我听说，附近有十几家公司。",
+                        pinyin: "Zhège xiǎoqū de huánjìng zhēn búcuò, búguò wǒ tīngshuō, fùjìn yǒu shí jǐ jiā gōngsī.",
+                        uz: "Bu majmuaning muhiti rostdan yaxshi, biroq eshitishimcha, yaqinida o'ndan ortiq kompaniya bor ekan.",
+                        ru: "Обстановка в этом комплексе отличная, но я слышал, что рядом больше десяти компаний.",
+                        en: "The environment of this complex is really nice, however I heard there are over a dozen companies nearby."
+                    },
+                    {
+                        zh: "我们在动物园看见了很多动物，不过没看见大熊猫。",
+                        pinyin: "Wǒmen zài dòngwùyuán kànjiàn le hěn duō dòngwù, búguò méi kànjiàn dàxióngmāo.",
+                        uz: "Biz hayvonot bog'ida ko'plab hayvonlarni ko'rdik, biroq katta pandani ko'rmadik.",
+                        ru: "В зоопарке мы видели много животных, но не видели большую панду.",
+                        en: "We saw many animals at the zoo, however we didn't see the giant panda."
+                    },
+                    {
+                        zh: "我刚来北京时还不太习惯这里的天气，不过很快就适应了。",
+                        pinyin: "Wǒ gāng lái Běijīng shí hái bú tài xíguàn zhèlǐ de tiānqì, búguò hěn kuài jiù shìyìng le.",
+                        uz: "Pekinga endi kelganimda bu yerning ob-havosiga uncha ko'nikmagan edim, lekin tezda moslashib ketdim.",
+                        ru: "Когда я только приехал в Пекин, мне было непривычно к местной погоде, но я быстро привык.",
+                        en: "When I first came to Beijing I wasn't quite used to the weather here, however I adapted very quickly."
+                    }
+                ]
+            },
+            {
+                id: 3,
+                titleZh: "3. 连词 / 副词“并”",
+                badgeUz: "Bog'lovchi va inkorni kuchaytiruvchi ravish",
+                svgDiagram: `
+                    <svg viewBox="0 0 460 108" class="w-full max-w-lg h-auto" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Row 1: Conjunction -->
+                        <rect x="6" y="8" width="115" height="38" rx="10" fill="#0F4C5C"/>
+                        <text x="63" y="32" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">动词/短语 1</text>
+                        <text x="137" y="32" text-anchor="middle" fill="#64748B" font-size="16" font-weight="700">+</text>
+                        <rect x="152" y="8" width="60" height="38" rx="10" fill="#D95D39"/>
+                        <text x="182" y="33" text-anchor="middle" fill="#FFFFFF" font-size="17" font-weight="800" font-family="Noto Sans SC, sans-serif">并</text>
+                        <text x="228" y="32" text-anchor="middle" fill="#64748B" font-size="16" font-weight="700">+</text>
+                        <rect x="242" y="8" width="115" height="38" rx="10" fill="#0F4C5C"/>
+                        <text x="299" y="32" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">动词/短语 2</text>
+                        <text x="408" y="32" text-anchor="middle" fill="#2A9D8F" font-size="13" font-weight="700">(连词)</text>
+                        <!-- Row 2: Adverb -->
+                        <rect x="6" y="60" width="66" height="38" rx="10" fill="#D95D39"/>
+                        <text x="39" y="85" text-anchor="middle" fill="#FFFFFF" font-size="17" font-weight="800" font-family="Noto Sans SC, sans-serif">并</text>
+                        <text x="88" y="84" text-anchor="middle" fill="#64748B" font-size="16" font-weight="700">+</text>
+                        <rect x="104" y="60" width="110" height="38" rx="10" fill="#2A9D8F"/>
+                        <text x="159" y="84" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="Noto Sans SC, sans-serif">不 / 没(有)</text>
+                        <text x="230" y="84" text-anchor="middle" fill="#64748B" font-size="16" font-weight="700">+</text>
+                        <rect x="246" y="60" width="110" height="38" rx="10" fill="#475569"/>
+                        <text x="301" y="84" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="700" font-family="Noto Sans SC, sans-serif">动词 / 形容词</text>
+                        <text x="408" y="84" text-anchor="middle" fill="#D95D39" font-size="13" font-weight="700">(副词)</text>
+                    </svg>
+                `,
+                expZh: "（1）作连词，连接并列的双音节动词、短语或小句，表示并列或更进一层；（2）作副词，用在否定词“不、没”前，加强否定语气，说明事实并非如此。",
+                expUz: "(1) Bog'lovchi sifatida ikki bo'g'inli fe'llar, iboralar yoki gaplarni bog'lab, «va, shuningdek» ma'nosini beradi; (2) Ravish sifatida «不 / 没» inkor so'zlaridan oldin kelib, inkorni kuchaytiradi («aslo / hech ham bunday emas»).",
+                expRu: "(1) Как союз соединяет однородные двусложные глаголы, словосочетания или части предложения («и, а также»); (2) Как наречие ставится перед отрицаниями «不 / 没» для усиления отрицания («вовсе не»).",
+                expEn: "(1) As a conjunction, “并” connects parallel disyllabic verbs, phrases, or clauses ('and; furthermore'); (2) As an adverb, it precedes negatives (“不/没”) to emphasize that the fact is not so ('not at all').",
+                examples: [
+                    {
+                        zh: "房东又向我介绍了一下房子里的东西，并告诉我这些东西怎么用。",
+                        pinyin: "Fángdōng yòu xiàng wǒ jièshào le yíxià fángzi lǐ de dōngxi, bìng gàosu wǒ zhèxiē dōngxi zěnme yòng.",
+                        uz: "Uy egasi menga yana uy ichidagi narsalarni tanishtirdi va ulardan qanday foydalanishni aytdi.",
+                        ru: "Хозяин снова показал мне вещи в квартире и объяснил, как ими пользоваться.",
+                        en: "The landlord introduced the things in the apartment to me again, and told me how to use them."
+                    },
+                    {
+                        zh: "她考上了北京大学并申请到了奖学金。",
+                        pinyin: "Tā kǎoshàng le Běijīng Dàxué bìng shēnqǐng dào le jiǎngxuéjīn.",
+                        uz: "U Pekin universitetiga o'qishga kirdi va stipendiya olishga muvaffaq bo'ldi.",
+                        ru: "Она поступила в Пекинский университет и получила стипендию.",
+                        en: "She was admitted to Peking University and successfully applied for a scholarship."
+                    },
+                    {
+                        zh: "我并没有答应你就租这个房子，我还要再想想。",
+                        pinyin: "Wǒ bìng méiyǒu dāying nǐ jiù zū zhège fángzi, wǒ hái yào zài xiǎngxiang.",
+                        uz: "Men senga shu uyni ijaraga olaman deb aslo va'da bermaganman, hali yana o'ylab ko'rishim kerak.",
+                        ru: "Я вовсе не обещал тебе снять именно эту квартиру, мне нужно ещё подумать.",
+                        en: "I didn't promise you at all that I would rent this apartment; I still need to think about it."
+                    }
+                ]
+            },
+            {
+                id: 4,
+                titleZh: "4. 连词 / 介词“由于”",
+                badgeUz: "Sabab bog'lovchisi va predlogi",
+                svgDiagram: `
+                    <svg viewBox="0 0 460 76" class="w-full max-w-lg h-auto" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="14" width="76" height="48" rx="12" fill="#D95D39"/>
+                        <text x="44" y="44" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="800" font-family="Noto Sans SC, sans-serif">由于</text>
+                        <rect x="90" y="14" width="120" height="48" rx="12" fill="#0F4C5C"/>
+                        <text x="150" y="43" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="Noto Sans SC, sans-serif">原因 / 理由</text>
+                        <path d="M 216 38 L 238 38" stroke="#64748B" stroke-width="2.5"/>
+                        <rect x="242" y="14" width="96" height="48" rx="12" fill="#E9C46A"/>
+                        <text x="290" y="43" text-anchor="middle" fill="#0F4C5C" font-size="15" font-weight="800" font-family="Noto Sans SC, sans-serif">所以 / 因此</text>
+                        <rect x="346" y="14" width="108" height="48" rx="12" fill="#2A9D8F"/>
+                        <text x="400" y="43" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="Noto Sans SC, sans-serif">结果</text>
+                    </svg>
+                `,
+                expZh: "（1）作连词，用在复句中前一分句的开头表示原因，后一分句常用“所以、因此”；（2）作介词，引出名词短语表示原因或理由。",
+                expUz: "(1) Bog'lovchi sifatida sabab-oqibat qo'shma gapining birinchi qismi boshida kelib sababni bildiradi, ikkinchi qismda ko'pincha “所以” yoki “因此” ishlatiladi; (2) Predlog sifatida otli birikma bilan kelib «...tufayli / ...sababli» ma'nosini bildiradi.",
+                expRu: "(1) Как союз ставится в начале первой части сложного предложения для указания причины, во второй части обычно используются «所以» или «因此»; (2) Как предлог вводит именную группу со значением причины («из-за», «благодаря»).",
+                expEn: "(1) As a conjunction, used at the start of the first clause to state a cause, often paired with “所以” or “因此”; (2) As a preposition, introduces a noun phrase indicating cause or reason ('because of').",
+                examples: [
+                    {
+                        zh: "由于很多刚工作的年轻人工资还不太高，所以他们一开始也不买房。",
+                        pinyin: "Yóuyú hěn duō gāng gōngzuò de niánqīngrén gōngzī hái bú tài gāo, suǒyǐ tāmen yì kāishǐ yě bù mǎifáng.",
+                        uz: "Endi ish boshlagan ko'plab yoshlarning maoshi hali uncha baland bo'lmaganligi sababli, ular boshida uy sotib olmaydilar.",
+                        ru: "Поскольку у многих молодых людей, только начавших работать, зарплата ещё невысокая, сначала они не покупают жильё.",
+                        en: "Because many young people who just started working don't earn high salaries yet, they don't buy a house at first."
+                    },
+                    {
+                        zh: "由于一直下大雨，所以我们决定不爬山了。",
+                        pinyin: "Yóuyú yìzhí xià dàyǔ, suǒyǐ wǒmen juédìng bù páshān le.",
+                        uz: "To'xtovsiz kuchli yomg'ir yog'ayotgani sababli, biz toqqa chiqmaslikka qaror qildik.",
+                        ru: "Из-за того что всё время шёл сильный дождь, мы решили не подниматься в горы.",
+                        en: "Because it kept raining heavily, we decided not to go mountain climbing."
+                    },
+                    {
+                        zh: "由于大家的努力，这次运动会我们班获得了第一名。",
+                        pinyin: "Yóuyú dàjiā de nǔlì, zhè cì yùndònghuì wǒmen bān huòdé le dì-yī míng.",
+                        uz: "Hammaning harakati tufayli bu safargi sport musobaqasida sinfimiz birinchi o'rinni oldi.",
+                        ru: "Благодаря стараниям всех, на этих спортивных соревнованиях наш класс занял первое место.",
+                        en: "Because of everyone's hard work, our class won first place in this sports meet."
+                    }
+                ]
+            }
+        ];
+
+        // =========================================================================
+        // 4. GRAMMAR QUIZ DATA (16 QUESTIONS - HANZI ONLY PER REQUIREMENT 11)
+        // =========================================================================
+        const GRAMMAR_QUIZ_DATA = [
+            {
+                tag: "固定格式“×就是了”",
+                q: "如果决定租这个房间了，直接给我打电话____。",
+                options: ["就是了", "不过", "由于", "并且"],
+                answer: 0,
+                explain: "“×就是了”用在口语的句子末尾，表示肯定和轻松的语气。"
+            },
+            {
+                tag: "固定格式“×就是了”",
+                q: "这件事我一定能办好，您____。",
+                options: ["放心就是了", "就是了放心", "放心不过", "放心由于"],
+                answer: 0,
+                explain: "固定格式是“动词/短语 + 就是了”，所以应选“放心就是了”。"
+            },
+            {
+                tag: "固定格式“×就是了”",
+                q: "A：这件衣服很漂亮，我要不要买呢？ B：既然喜欢，____。",
+                options: ["买下来就是了", "不过买下来", "并买下来", "由于买下来"],
+                answer: 0,
+                explain: "“买下来就是了”在句尾表示肯定的建议。"
+            },
+            {
+                tag: "固定格式“×就是了”",
+                q: "这次考试没考好没关系，下次多____。",
+                options: ["努力就是了", "努力由于", "努力但是", "就是了努力"],
+                answer: 0,
+                explain: "“努力就是了”用于句尾，表示鼓励和肯定。"
+            },
+            {
+                tag: "转折复句“……，不过……”",
+                q: "这个小区的环境真不错，____房租有一点儿贵。",
+                options: ["不过", "由于", "并", "就是了"],
+                answer: 0,
+                explain: "前后分句意思发生转折，连词“不过”用在后一分句开头。"
+            },
+            {
+                tag: "转折复句“……，不过……”",
+                q: "我们在动物园看见了很多动物，____没看见大熊猫。",
+                options: ["不过", "因此", "由于", "所以"],
+                answer: 0,
+                explain: "“看见了很多动物”与“没看见大熊猫”形成转折关系，应选“不过”。"
+            },
+            {
+                tag: "转折复句“……，不过……”",
+                q: "刚来北京时我还不太习惯这里的冬天，____很快就适应了。",
+                options: ["不过", "并", "由于", "就是了"],
+                answer: 0,
+                explain: "前句说“不太习惯”，后句说“很快适应了”，转折关系用“不过”。"
+            },
+            {
+                tag: "转折复句“……，不过……”",
+                q: "A：我们可以走着去地铁站吗？ B：可以，____大概需要二十分钟。",
+                options: ["不过", "所以", "由于", "因此"],
+                answer: 0,
+                explain: "先肯定“可以”，再补充说明有点远，用“不过”表示委婉转折。"
+            },
+            {
+                tag: "连词“并”",
+                q: "房东向我介绍了房子里的东西，____告诉我怎么用。",
+                options: ["并", "不过", "由于", "就是了"],
+                answer: 0,
+                explain: "“并”作连词，连接并列的动作“介绍”和“告诉”，表示更进一层。"
+            },
+            {
+                tag: "连词“并”",
+                q: "她考上了北京大学，____申请到了奖学金。",
+                options: ["并", "不过", "由于", "恐怕"],
+                answer: 0,
+                explain: "“考上了”和“申请到了”是并列递进关系，用连词“并”。"
+            },
+            {
+                tag: "副词“并”",
+                q: "对白家月来说，这次租房____不容易。",
+                options: ["并", "不过", "由于", "因此"],
+                answer: 0,
+                explain: "“并”作副词，用在否定词“不”之前，加强否定语气。"
+            },
+            {
+                tag: "副词“并”",
+                q: "我____没有答应立刻租这个房子，我还要再考虑一下。",
+                options: ["并", "不过", "由于", "就是了"],
+                answer: 0,
+                explain: "“并”用在否定词“没有”前，强调事实并非如此。"
+            },
+            {
+                tag: "连词“由于”",
+                q: "____很多刚工作的年轻人工资还不太高，所以他们先选择租房。",
+                options: ["由于", "不过", "并", "就是了"],
+                answer: 0,
+                explain: "“由于……，所以……”表示因果关系，“由于”引出原因。"
+            },
+            {
+                tag: "连词“由于”",
+                q: "____一直下大雨，因此我们决定今天不去爬山了。",
+                options: ["由于", "不过", "并", "虽然"],
+                answer: 0,
+                explain: "“由于”作连词用在第一分句开头，常与“因此”搭配表示因果。"
+            },
+            {
+                tag: "介词“由于”",
+                q: "____大家的共同努力，我们班在运动会上获得了第一名。",
+                options: ["由于", "不过", "并", "就是了"],
+                answer: 0,
+                explain: "“由于”作介词，后接名词短语“大家的共同努力”，表示原因。"
+            },
+            {
+                tag: "综合运用",
+                q: "下列句子中，使用“并”正确的一项是：",
+                options: [
+                    "他毕业后来到北京工作，并租了一间离公司很近的房子。",
+                    "他并很高兴地搬进了新家。",
+                    "这个房间并很大，也很亮。",
+                    "由于并下雨，所以我们没出门。"
+                ],
+                answer: 0,
+                explain: "“并”作连词连接并列动词短语；作副词时只能用在否定词前，不能直接修饰肯定形容词。"
+            }
+        ];
+
+        // =========================================================================
+        // 5. EXERCISES DATA (PAGE 9-10: 选词填空 & 短文填空)
+        // =========================================================================
+        const EX1_DATA = [
+            { num: 1, before: "这个小区环境好，", after: "也不高，一个月才5000元。", ans: "B", opts: ["A 收拾", "B 房租", "C 入住", "D 租", "E 查看"] },
+            { num: 2, before: "要", after: "一个好房子也不容易，需要多多比较。", ans: "D", opts: ["A 收拾", "B 房租", "C 入住", "D 租", "E 查看"] },
+            { num: 3, before: "我女儿每天都把房间", after: "得干干净净的。", ans: "A", opts: ["A 收拾", "B 房租", "C 入住", "D 租", "E 查看"] },
+            { num: 4, before: "这次比赛的通知已经发到大家的邮箱了，请注意", after: "。", ans: "E", opts: ["A 收拾", "B 房租", "C 入住", "D 租", "E 查看"] },
+            { num: 5, before: "", after: "后我发现，宾馆房间的灯是坏的。", ans: "C", opts: ["A 收拾", "B 房租", "C 入住", "D 租", "E 查看"] }
+        ];
+
+        const EX2_DATA = [
+            { num: 6, lineA: "A：我最近打算在公司附近租个房子。", before: "B：那你上网", after: "租房信息时，一定要小心，不要只看价格。", ans: "C", opts: ["A 周围", "B 建议", "C 查找", "D 客厅", "E 接着"] },
+            { num: 7, lineA: "A：你假期打算做什么？", before: "B：我要先回家住几天，", after: "跟朋友去上海玩。", ans: "E", opts: ["A 周围", "B 建议", "C 查找", "D 客厅", "E 接着"] },
+            { num: 8, lineA: "", before: "A：听说小区", after: "有很多公司，很多年轻人都租住在附近。 / B：是的，所以周末时特别热闹。", ans: "A", opts: ["A 周围", "B 建议", "C 查找", "D 客厅", "E 接着"] },
+            { num: 9, lineA: "A：这个房子怎么样？", before: "B：很大，", after: "也大，里边除了沙发以外，还有一台大电视。", ans: "D", opts: ["A 周围", "B 建议", "C 查找", "D 客厅", "E 接着"] },
+            { num: 10, lineA: "", before: "A：关于租什么样的房子合适，你还有什么好", after: "？ / B：除了离公司近以外，我觉得生活上方便也很重要。", ans: "B", opts: ["A 周围", "B 建议", "C 查找", "D 客厅", "E 接着"] }
+        ];
+
+        const EX3_ANSWERS = ["C", "A", "D", "B"];
+
+        // =========================================================================
+        // 6. SPEECH SYNTHESIS (CHINESE TTS)
+        // =========================================================================
+        let activeAudioBtn = null;
+
+        function speakChinese(text, btnEl = null) {
+            try {
+                if (!('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel();
+                if (activeAudioBtn) {
+                    activeAudioBtn.classList.remove('speaking');
+                }
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.88;
+                // Prefer Chinese voice if available
+                const voices = window.speechSynthesis.getVoices();
+                const zhVoice = voices.find(v => v.lang.includes('zh') || v.lang.includes('CN'));
+                if (zhVoice) utterance.voice = zhVoice;
+
+                if (btnEl) {
+                    activeAudioBtn = btnEl;
+                    btnEl.classList.add('speaking');
+                    utterance.onend = () => btnEl.classList.remove('speaking');
+                    utterance.onerror = () => btnEl.classList.remove('speaking');
+                }
+                window.speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.warn('TTS error:', e);
+            }
+        }
+
+        // =========================================================================
+        // 7. TAB NAVIGATION
+        // =========================================================================
+        function switchTab(tabName) {
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.add('hidden'));
+            const target = document.getElementById('section-' + tabName);
+            if (target) target.classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.dataset.tab === tabName) {
+                    btn.className = 'tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 bg-brand-teal text-white shadow-md';
+                } else {
+                    btn.className = 'tab-btn flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 text-stone-600 hover:bg-stone-100 hover:text-brand-teal';
+                }
+            });
+        }
+
+        // =========================================================================
+        // 8. FLASHCARDS LOGIC
+        // =========================================================================
+        let currentCards = [...VOCAB_DATA];
+        let fcIndex = 0;
+        let isFlipped = false;
+
+        function filterFlashcards(filterVal) {
+            if (filterVal === 'all') {
+                currentCards = [...VOCAB_DATA];
+            } else {
+                currentCards = VOCAB_DATA.filter(w => w.text === filterVal);
+            }
+            fcIndex = 0;
+            isFlipped = false;
+            updateFilterButtons(String(filterVal));
+            renderFlashcard();
+            renderVocabGrid();
+        }
+
+        function updateFilterButtons(activeVal) {
+            document.querySelectorAll('.fc-filter-btn').forEach(btn => {
+                if (btn.dataset.filter === activeVal) {
+                    btn.className = 'fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors bg-brand-teal text-white shadow-sm';
+                } else {
+                    btn.className = 'fc-filter-btn px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200';
+                }
+            });
+        }
+
+        function renderFlashcard() {
+            const card = currentCards[fcIndex];
+            if (!card) return;
+            const inner = document.getElementById('flashcard-inner');
+            inner.classList.toggle('rotate-y-180', isFlipped);
+
+            document.getElementById('fc-counter').textContent = `${fcIndex + 1} / ${currentCards.length}`;
+            document.getElementById('fc-text-badge').textContent = `${card.text}-matn`;
+            document.getElementById('fc-pos').textContent = card.pos;
+            document.getElementById('fc-hanzi').textContent = card.hanzi;
+
+            document.getElementById('fc-back-hanzi').textContent = card.hanzi;
+            document.getElementById('fc-back-pinyin').textContent = card.pinyin;
+            document.getElementById('fc-uz').textContent = card.uz;
+            document.getElementById('fc-ru').textContent = card.ru;
+            document.getElementById('fc-en').textContent = card.en;
+        }
+
+        function flipFlashcard() {
+            isFlipped = !isFlipped;
+            document.getElementById('flashcard-inner').classList.toggle('rotate-y-180', isFlipped);
+        }
+
+        function nextFlashcard() {
+            isFlipped = false;
+            fcIndex = (fcIndex + 1) % currentCards.length;
+            renderFlashcard();
+        }
+
+        function prevFlashcard() {
+            isFlipped = false;
+            fcIndex = (fcIndex - 1 + currentCards.length) % currentCards.length;
+            renderFlashcard();
+        }
+
+        function shuffleFlashcards() {
+            for (let i = currentCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [currentCards[i], currentCards[j]] = [currentCards[j], currentCards[i]];
+            }
+            fcIndex = 0;
+            isFlipped = false;
+            renderFlashcard();
+            renderVocabGrid();
+        }
+
+        function speakCurrentFlashcard(btnEl) {
+            const card = currentCards[fcIndex];
+            if (card) speakChinese(card.hanzi, btnEl);
+        }
+
+        function renderVocabGrid() {
+            const grid = document.getElementById('vocab-grid');
+            grid.innerHTML = currentCards.map((w, idx) => `
+                <button onclick="selectFlashcardByIndex(${idx})"
+                    class="text-left p-3 rounded-2xl bg-white hover:bg-brand-sand/70 border border-stone-200/80 shadow-sm transition-all group">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg font-bold font-zh text-brand-teal group-hover:text-brand-coral transition-colors">${w.hanzi}</span>
+                        <span class="text-[11px] font-medium text-stone-400">${w.pinyin}</span>
+                    </div>
+                    <div class="text-xs text-stone-600 mt-1 line-clamp-1">${w.uz}</div>
+                </button>
+            `).join('');
+        }
+
+        function selectFlashcardByIndex(idx) {
+            fcIndex = idx;
+            isFlipped = false;
+            renderFlashcard();
+            window.scrollTo({ top: 140, behavior: 'smooth' });
+        }
+
+        // =========================================================================
+        // 9. VOCABULARY QUIZ (20 QUESTIONS - HANZI ONLY & UZBEK OPTIONS)
+        // =========================================================================
+        let vqQuestions = [];
+        let vqCurrent = 0;
+        let vqScore = 0;
+        let vqAnswered = false;
+
+        function initVocabQuiz() {
+            // Shuffle all 37 words and pick 20 (>= 15 required)
+            const shuffled = [...VOCAB_DATA].sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, 20);
+
+            vqQuestions = selected.map(word => {
+                const distractors = VOCAB_DATA
+                    .filter(w => w.id !== word.id)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 3)
+                    .map(w => w.uz);
+                const options = [word.uz, ...distractors].sort(() => Math.random() - 0.5);
+                return {
+                    hanzi: word.hanzi,
+                    correctUz: word.uz,
+                    options
+                };
+            });
+
+            vqCurrent = 0;
+            vqScore = 0;
+            document.getElementById('vq-container').classList.remove('hidden');
+            document.getElementById('vq-result').classList.add('hidden');
+            renderVocabQuestion();
+        }
+
+        function renderVocabQuestion() {
+            vqAnswered = false;
+            const q = vqQuestions[vqCurrent];
+            const total = vqQuestions.length;
+
+            // Update SVG Progress Ring
+            const circumference = 163.36;
+            const offset = circumference - ((vqCurrent + 1) / total) * circumference;
+            document.getElementById('vq-ring').style.strokeDashoffset = offset;
+            document.getElementById('vq-ring-text').textContent = `${vqCurrent + 1}/${total}`;
+
+            // Show ONLY Hanzi
+            document.getElementById('vq-word').textContent = q.hanzi;
+
+            const optsEl = document.getElementById('vq-options');
+            optsEl.innerHTML = q.options.map((opt, i) => `
+                <button onclick="answerVocabQuestion(${i}, this)"
+                    class="vq-opt-btn p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-brand-teal hover:bg-brand-cream text-left font-semibold text-stone-700 text-sm sm:text-base transition-all">
+                    <span class="inline-block w-6 h-6 rounded-full bg-stone-100 text-brand-teal text-xs font-bold text-center leading-6 mr-2">${String.fromCharCode(65 + i)}</span>
+                    <span>${opt}</span>
+                </button>
+            `).join('');
+
+            const fb = document.getElementById('vq-feedback');
+            fb.classList.add('hidden');
+            document.getElementById('vq-next-btn').classList.add('hidden');
+        }
+
+        function answerVocabQuestion(optIdx, btnEl) {
+            if (vqAnswered) return;
+            vqAnswered = true;
+            const q = vqQuestions[vqCurrent];
+            const chosen = q.options[optIdx];
+            const isCorrect = chosen === q.correctUz;
+            if (isCorrect) vqScore++;
+
+            const allBtns = document.querySelectorAll('.vq-opt-btn');
+            allBtns.forEach((b, idx) => {
+                b.disabled = true;
+                if (q.options[idx] === q.correctUz) {
+                    b.classList.remove('border-stone-200', 'bg-white');
+                    b.classList.add('border-brand-sage', 'bg-emerald-50', 'text-emerald-900');
+                } else if (idx === optIdx && !isCorrect) {
+                    b.classList.remove('border-stone-200', 'bg-white');
+                    b.classList.add('border-red-400', 'bg-red-50', 'text-red-900');
+                }
+            });
+
+            const fb = document.getElementById('vq-feedback');
+            fb.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'bg-red-50', 'text-red-800');
+            if (isCorrect) {
+                fb.classList.add('bg-emerald-50', 'text-emerald-800');
+                fb.textContent = "To'g'ri! Barakalla!";
+            } else {
+                fb.classList.add('bg-red-50', 'text-red-800');
+                fb.textContent = `Noto'g'ri. To'g'ri javob: ${q.correctUz}`;
+            }
+
+            const nextBtn = document.getElementById('vq-next-btn');
+            nextBtn.textContent = vqCurrent < vqQuestions.length - 1 ? "Keyingi savol →" : "Natijani ko'rish";
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextVocabQuestion() {
+            if (vqCurrent < vqQuestions.length - 1) {
+                vqCurrent++;
+                renderVocabQuestion();
+            } else {
+                document.getElementById('vq-container').classList.add('hidden');
+                document.getElementById('vq-result').classList.remove('hidden');
+                document.getElementById('vq-score-text').textContent = `Natija: ${vqScore} / ${vqQuestions.length}`;
+                const pct = Math.round((vqScore / vqQuestions.length) * 100);
+                document.getElementById('vq-message').textContent =
+                    pct >= 85 ? "Ajoyib natija! Siz dars so'zlarini juda yaxshi o'zlashtiribsiz." :
+                    pct >= 60 ? "Yaxshi natija! Yana bir oz mashq qilsangiz, yanada mukammal bo'ladi." :
+                    "Kartochkalarni yana bir bor ko'rib chiqib, testni qaytadan topshirib ko'ring.";
+            }
+        }
+
+        // =========================================================================
+        // 10. DIALOGUES & TEXTS LOGIC (ALL 4 TEXTS + AUDIO + TRILINGUAL)
+        // =========================================================================
+        let activeDialogueIdx = 0;
+        let showDialoguePinyin = true;
+        let showDialogueTrans = true;
+
+        function selectDialogue(idx) {
+            activeDialogueIdx = idx;
+            document.querySelectorAll('.d-tab-btn').forEach(btn => {
+                if (Number(btn.dataset.didx) === idx) {
+                    btn.className = 'd-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all bg-brand-teal text-white shadow-sm';
+                } else {
+                    btn.className = 'd-tab-btn px-4 py-2 rounded-xl text-sm font-bold transition-all bg-stone-100 text-stone-600 hover:bg-stone-200';
+                }
+            });
+            renderDialogue();
+        }
+
+        function toggleDialoguePinyin() {
+            showDialoguePinyin = !showDialoguePinyin;
+            const btn = document.getElementById('toggle-pinyin-btn');
+            btn.textContent = showDialoguePinyin ? 'Pinyin: Yoqilgan' : "Pinyin: O'chirilgan";
+            btn.className = showDialoguePinyin
+                ? 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-teal text-white transition-colors'
+                : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200 text-stone-600 transition-colors';
+            renderDialogue();
+        }
+
+        function toggleDialogueTrans() {
+            showDialogueTrans = !showDialogueTrans;
+            const btn = document.getElementById('toggle-trans-btn');
+            btn.textContent = showDialogueTrans ? 'Tarjima: Yoqilgan' : "Tarjima: O'chirilgan";
+            btn.className = showDialogueTrans
+                ? 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-sage text-white transition-colors'
+                : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-stone-200 text-stone-600 transition-colors';
+            renderDialogue();
+        }
+
+        function playFullDialogue(btnEl) {
+            const d = DIALOGUES_DATA[activeDialogueIdx];
+            const fullText = d.lines.map(l => l.zh).join(' ');
+            speakChinese(fullText, btnEl);
+        }
+
+        function renderDialogue() {
+            const d = DIALOGUES_DATA[activeDialogueIdx];
+            const container = document.getElementById('dialogue-content');
+
+            const linesHtml = d.lines.map((line, i) => {
+                const isAlt = i % 2 === 1 && d.type === 'dialogue';
+                const safeZh = line.zh.replace(/'/g, "\\'");
+                return `
+                    <div class="p-5 sm:p-6 ${isAlt ? 'bg-brand-cream/70' : 'bg-white'} border-b border-stone-100 last:border-b-0">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center gap-2.5 mb-2">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold ${isAlt ? 'bg-brand-coral/15 text-brand-coral' : 'bg-brand-teal/15 text-brand-teal'} font-zh">
+                                    ${line.speaker}
+                                </span>
+                                <span class="text-xs font-medium text-stone-400">${line.speakerUz}</span>
+                            </div>
+                            <!-- Line Audio Pronunciation Button (Requirement 10) -->
+                            <button onclick="speakChinese('${safeZh}', this)"
+                                class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-teal/10 hover:bg-brand-teal text-brand-teal hover:text-white text-xs font-semibold transition-all"
+                                aria-label="Eshitish">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                    <path class="wave-bar" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                </svg>
+                                <span>Eshitish</span>
+                            </button>
+                        </div>
+
+                        <p class="text-lg sm:text-xl font-zh font-medium text-slate-800 leading-relaxed">${line.zh}</p>
+
+                        ${showDialoguePinyin ? `<p class="mt-1.5 text-sm text-brand-coral font-medium leading-relaxed">${line.pinyin}</p>` : ''}
+
+                        ${showDialogueTrans ? `
+                            <div class="mt-3.5 grid grid-cols-1 md:grid-cols-3 gap-2.5 text-xs sm:text-sm">
+                                <div class="p-3 rounded-xl bg-amber-50/80 border border-amber-200/60">
+                                    <span class="font-bold text-amber-800 block text-[11px] uppercase mb-0.5">O'zbekcha</span>
+                                    <span class="text-stone-700">${line.uz}</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-sky-50/80 border border-sky-200/60">
+                                    <span class="font-bold text-sky-800 block text-[11px] uppercase mb-0.5">Русский</span>
+                                    <span class="text-stone-700">${line.ru}</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200/60">
+                                    <span class="font-bold text-emerald-800 block text-[11px] uppercase mb-0.5">English</span>
+                                    <span class="text-stone-700">${line.en}</span>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-gradient-to-r from-brand-teal to-brand-tealLight text-white p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-extrabold font-zh">${d.titleZh}</h2>
+                        <p class="text-sm text-white/90 font-zh mt-1">${d.contextZh}</p>
+                        ${showDialogueTrans ? `
+                            <div class="mt-2 space-y-0.5 text-xs text-amber-100/95">
+                                <p><strong>UZ:</strong> ${d.contextUz}</p>
+                                <p><strong>RU:</strong> ${d.contextRu}</p>
+                                <p><strong>EN:</strong> ${d.contextEn}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button onclick="playFullDialogue(this)"
+                        class="self-start sm:self-center flex-shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-coral hover:bg-[#c5502f] text-white font-semibold text-sm shadow-md transition-all">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span>To'liq eshitish</span>
+                    </button>
+                </div>
+                <div>${linesHtml}</div>
+            `;
+        }
+
+        // =========================================================================
+        // 11. GRAMMAR EXPLANATIONS RENDER
+        // =========================================================================
+        function renderGrammarSection() {
+            const container = document.getElementById('grammar-cards-container');
+            container.innerHTML = GRAMMAR_DATA.map(g => `
+                <article class="bg-white rounded-3xl shadow-md border border-stone-200 overflow-hidden">
+                    <div class="bg-brand-cream border-b border-stone-200 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <span class="inline-block text-xs font-bold uppercase tracking-wider text-brand-coral mb-1">${g.badgeUz}</span>
+                            <h3 class="text-xl sm:text-2xl font-extrabold font-zh text-brand-teal">${g.titleZh}</h3>
+                        </div>
+                    </div>
+
+                    <div class="p-5 sm:p-6 space-y-5">
+                        <!-- Visual SVG Structure Diagram -->
+                        <div class="flex justify-center bg-stone-50 rounded-2xl p-4 border border-stone-200/80">
+                            ${g.svgDiagram}
+                        </div>
+
+                        <!-- Explanations: ZH + UZ + RU + EN -->
+                        <div class="space-y-2.5 text-sm leading-relaxed">
+                            <p class="font-zh font-semibold text-slate-800 bg-brand-sand/60 p-3.5 rounded-xl">${g.expZh}</p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
+                                    <div class="text-[11px] font-bold uppercase text-amber-800 mb-1">O'zbekcha</div>
+                                    <p class="text-stone-700">${g.expUz}</p>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-sky-50/70 border border-sky-200/60">
+                                    <div class="text-[11px] font-bold uppercase text-sky-800 mb-1">Русский</div>
+                                    <p class="text-stone-700">${g.expRu}</p>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200/60">
+                                    <div class="text-[11px] font-bold uppercase text-emerald-800 mb-1">English</div>
+                                    <p class="text-stone-700">${g.expEn}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Examples -->
+                        <div class="space-y-3 pt-2">
+                            <h4 class="text-sm font-bold uppercase tracking-wider text-brand-teal">Misollar / 例如</h4>
+                            ${g.examples.map((ex, i) => {
+                                const safeZh = ex.zh.replace(/'/g, "\\'");
+                                return `
+                                    <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200/80">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p class="text-base sm:text-lg font-zh font-bold text-slate-800">${i + 1}. ${ex.zh}</p>
+                                                <p class="text-xs sm:text-sm text-brand-coral font-medium mt-0.5">${ex.pinyin}</p>
+                                            </div>
+                                            <button onclick="speakChinese('${safeZh}', this)"
+                                                class="flex-shrink-0 p-2 rounded-full bg-brand-teal/10 hover:bg-brand-teal text-brand-teal hover:text-white transition-colors"
+                                                aria-label="Talaffuz">
+                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                                    <path class="wave-bar" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="mt-2.5 space-y-1 text-xs sm:text-sm text-stone-600 border-t border-stone-200/80 pt-2">
+                                            <p><strong class="text-amber-800">UZ:</strong> ${ex.uz}</p>
+                                            <p><strong class="text-sky-800">RU:</strong> ${ex.ru}</p>
+                                            <p><strong class="text-emerald-800">EN:</strong> ${ex.en}</p>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // =========================================================================
+        // 12. GRAMMAR QUIZ LOGIC (16 QUESTIONS - HANZI ONLY)
+        // =========================================================================
+        let gqCurrent = 0;
+        let gqScore = 0;
+        let gqAnswered = false;
+
+        function initGrammarQuiz() {
+            gqCurrent = 0;
+            gqScore = 0;
+            document.getElementById('gq-container').classList.remove('hidden');
+            document.getElementById('gq-result').classList.add('hidden');
+            renderGrammarQuestion();
+        }
+
+        function renderGrammarQuestion() {
+            gqAnswered = false;
+            const q = GRAMMAR_QUIZ_DATA[gqCurrent];
+            const total = GRAMMAR_QUIZ_DATA.length;
+
+            const circumference = 163.36;
+            const offset = circumference - ((gqCurrent + 1) / total) * circumference;
+            document.getElementById('gq-ring').style.strokeDashoffset = offset;
+            document.getElementById('gq-ring-text').textContent = `${gqCurrent + 1}/${total}`;
+
+            document.getElementById('gq-tag').textContent = q.tag;
+            document.getElementById('gq-question').textContent = `${gqCurrent + 1}. ${q.q}`;
+
+            const optsEl = document.getElementById('gq-options');
+            optsEl.innerHTML = q.options.map((opt, i) => `
+                <button onclick="answerGrammarQuestion(${i})"
+                    class="gq-opt-btn w-full p-4 rounded-2xl border-2 border-stone-200 bg-white hover:border-brand-teal hover:bg-brand-cream text-left font-zh font-semibold text-slate-800 text-base transition-all">
+                    <span class="inline-block w-6 h-6 rounded-full bg-stone-100 text-brand-teal text-xs font-bold text-center leading-6 mr-2.5">${String.fromCharCode(65 + i)}</span>
+                    <span>${opt}</span>
+                </button>
+            `).join('');
+
+            document.getElementById('gq-feedback').classList.add('hidden');
+            document.getElementById('gq-next-btn').classList.add('hidden');
+        }
+
+        function answerGrammarQuestion(optIdx) {
+            if (gqAnswered) return;
+            gqAnswered = true;
+            const q = GRAMMAR_QUIZ_DATA[gqCurrent];
+            const isCorrect = optIdx === q.answer;
+            if (isCorrect) gqScore++;
+
+            const btns = document.querySelectorAll('.gq-opt-btn');
+            btns.forEach((b, idx) => {
+                b.disabled = true;
+                if (idx === q.answer) {
+                    b.classList.remove('border-stone-200', 'bg-white');
+                    b.classList.add('border-brand-sage', 'bg-emerald-50', 'text-emerald-900');
+                } else if (idx === optIdx && !isCorrect) {
+                    b.classList.remove('border-stone-200', 'bg-white');
+                    b.classList.add('border-red-400', 'bg-red-50', 'text-red-900');
+                }
+            });
+
+            const fb = document.getElementById('gq-feedback');
+            fb.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-900', 'bg-red-50', 'text-red-900');
+            if (isCorrect) {
+                fb.classList.add('bg-emerald-50', 'text-emerald-900');
+                fb.textContent = `回答正确！${q.explain}`;
+            } else {
+                fb.classList.add('bg-red-50', 'text-red-900');
+                fb.textContent = `回答不正确。正确答案是 ${String.fromCharCode(65 + q.answer)}。${q.explain}`;
+            }
+
+            const nextBtn = document.getElementById('gq-next-btn');
+            nextBtn.textContent = gqCurrent < GRAMMAR_QUIZ_DATA.length - 1 ? "下一题 →" : "查看成绩";
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextGrammarQuestion() {
+            if (gqCurrent < GRAMMAR_QUIZ_DATA.length - 1) {
+                gqCurrent++;
+                renderGrammarQuestion();
+            } else {
+                document.getElementById('gq-container').classList.add('hidden');
+                document.getElementById('gq-result').classList.remove('hidden');
+                document.getElementById('gq-score-text').textContent = `得分：${gqScore} / ${GRAMMAR_QUIZ_DATA.length}`;
+                const pct = Math.round((gqScore / GRAMMAR_QUIZ_DATA.length) * 100);
+                document.getElementById('gq-message').textContent =
+                    pct >= 85 ? "太棒了！本课语法点掌握得非常好！" :
+                    pct >= 60 ? "不错！再复习一下错题就更棒了。" :
+                    "建议再复习一下语法解释，然后重新测试。";
+            }
+        }
+
+        // =========================================================================
+        // 13. EXERCISES LOGIC (选词填空 1-10 & 短文填空)
+        // =========================================================================
+        function renderExercises() {
+            // Exercise 1 (1-5)
+            document.getElementById('ex1-list').innerHTML = EX1_DATA.map((item, i) => `
+                <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 font-zh text-base sm:text-lg text-slate-800 leading-relaxed flex flex-wrap items-center gap-1.5">
+                    <span class="font-bold text-brand-teal mr-1">(${item.num})</span>
+                    <span>${item.before}</span>
+                    <select id="ex1-sel-${i}" class="px-3 py-1.5 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal">
+                        <option value="">— Tanlang —</option>
+                        ${item.opts.map(o => `<option value="${o[0]}">${o}</option>`).join('')}
+                    </select>
+                    <span>${item.after}</span>
+                    <span id="ex1-mark-${i}" class="ml-auto text-sm font-bold"></span>
+                </div>
+            `).join('');
+
+            // Exercise 2 (6-10)
+            document.getElementById('ex2-list').innerHTML = EX2_DATA.map((item, i) => `
+                <div class="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 font-zh text-base sm:text-lg text-slate-800 leading-relaxed space-y-1.5">
+                    ${item.lineA ? `<div class="text-stone-600"><span class="font-bold text-brand-teal mr-1">(${item.num})</span>${item.lineA}</div>` : ''}
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        ${!item.lineA ? `<span class="font-bold text-brand-teal mr-1">(${item.num})</span>` : ''}
+                        <span>${item.before}</span>
+                        <select id="ex2-sel-${i}" class="px-3 py-1.5 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal">
+                            <option value="">— Tanlang —</option>
+                            ${item.opts.map(o => `<option value="${o[0]}">${o}</option>`).join('')}
+                        </select>
+                        <span>${item.after}</span>
+                        <span id="ex2-mark-${i}" class="ml-auto text-sm font-bold"></span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Exercise 3 (Passage)
+            const makeSelect = (idx) => `
+                <select id="ex3-sel-${idx}" class="mx-1 px-2.5 py-1 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal">
+                    <option value="">(${idx + 1})</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span id="ex3-mark-${idx}" class="text-xs font-bold mr-1"></span>
+            `;
+
+            document.getElementById('ex3-passage').innerHTML = `
+                小张最近换了一个比较理想的工作。由于新公司离她现在住的地方比较远，${makeSelect(0)}。
+                她在网上查找到一条出租信息，${makeSelect(1)}。
+                房东说，小张要租的房子不太大，${makeSelect(2)}，房租不高，位置也比较好。
+                接着，房东又建议小张过去看看。小张看了以后，${makeSelect(3)}，就租了下来。
+            `;
+        }
+
+        function checkExercise(part) {
+            if (part === 1) {
+                let correct = 0;
+                EX1_DATA.forEach((item, i) => {
+                    const sel = document.getElementById(`ex1-sel-${i}`);
+                    const mark = document.getElementById(`ex1-mark-${i}`);
+                    if (sel.value === item.ans) {
+                        correct++;
+                        sel.className = 'px-3 py-1.5 rounded-xl border-2 border-brand-sage bg-emerald-50 font-zh font-bold text-emerald-800 text-sm sm:text-base';
+                        mark.textContent = '✓';
+                        mark.className = 'ml-auto text-sm font-bold text-emerald-600';
+                    } else {
+                        sel.className = 'px-3 py-1.5 rounded-xl border-2 border-red-400 bg-red-50 font-zh font-bold text-red-800 text-sm sm:text-base';
+                        mark.textContent = `✗ (${item.ans})`;
+                        mark.className = 'ml-auto text-sm font-bold text-red-600';
+                    }
+                });
+                const badge = document.getElementById('ex1-score');
+                badge.textContent = `Natija: ${correct} / ${EX1_DATA.length}`;
+                badge.classList.remove('hidden');
+            } else if (part === 2) {
+                let correct = 0;
+                EX2_DATA.forEach((item, i) => {
+                    const sel = document.getElementById(`ex2-sel-${i}`);
+                    const mark = document.getElementById(`ex2-mark-${i}`);
+                    if (sel.value === item.ans) {
+                        correct++;
+                        sel.className = 'px-3 py-1.5 rounded-xl border-2 border-brand-sage bg-emerald-50 font-zh font-bold text-emerald-800 text-sm sm:text-base';
+                        mark.textContent = '✓';
+                        mark.className = 'ml-auto text-sm font-bold text-emerald-600';
+                    } else {
+                        sel.className = 'px-3 py-1.5 rounded-xl border-2 border-red-400 bg-red-50 font-zh font-bold text-red-800 text-sm sm:text-base';
+                        mark.textContent = `✗ (${item.ans})`;
+                        mark.className = 'ml-auto text-sm font-bold text-red-600';
+                    }
+                });
+                const badge = document.getElementById('ex2-score');
+                badge.textContent = `Natija: ${correct} / ${EX2_DATA.length}`;
+                badge.classList.remove('hidden');
+            } else if (part === 3) {
+                let correct = 0;
+                EX3_ANSWERS.forEach((ans, i) => {
+                    const sel = document.getElementById(`ex3-sel-${i}`);
+                    const mark = document.getElementById(`ex3-mark-${i}`);
+                    if (sel.value === ans) {
+                        correct++;
+                        sel.className = 'mx-1 px-2.5 py-1 rounded-xl border-2 border-brand-sage bg-emerald-50 font-zh font-bold text-emerald-800 text-sm sm:text-base';
+                        mark.textContent = '✓';
+                        mark.className = 'text-xs font-bold mr-1 text-emerald-600';
+                    } else {
+                        sel.className = 'mx-1 px-2.5 py-1 rounded-xl border-2 border-red-400 bg-red-50 font-zh font-bold text-red-800 text-sm sm:text-base';
+                        mark.textContent = `✗(${ans})`;
+                        mark.className = 'text-xs font-bold mr-1 text-red-600';
+                    }
+                });
+                const badge = document.getElementById('ex3-score');
+                badge.textContent = `Natija: ${correct} / ${EX3_ANSWERS.length}`;
+                badge.classList.remove('hidden');
+            }
+        }
+
+        function resetExercise(part) {
+            if (part === 1) {
+                EX1_DATA.forEach((_, i) => {
+                    const sel = document.getElementById(`ex1-sel-${i}`);
+                    sel.value = '';
+                    sel.className = 'px-3 py-1.5 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal';
+                    document.getElementById(`ex1-mark-${i}`).textContent = '';
+                });
+                document.getElementById('ex1-score').classList.add('hidden');
+            } else if (part === 2) {
+                EX2_DATA.forEach((_, i) => {
+                    const sel = document.getElementById(`ex2-sel-${i}`);
+                    sel.value = '';
+                    sel.className = 'px-3 py-1.5 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal';
+                    document.getElementById(`ex2-mark-${i}`).textContent = '';
+                });
+                document.getElementById('ex2-score').classList.add('hidden');
+            } else if (part === 3) {
+                EX3_ANSWERS.forEach((_, i) => {
+                    const sel = document.getElementById(`ex3-sel-${i}`);
+                    sel.value = '';
+                    sel.className = 'mx-1 px-2.5 py-1 rounded-xl border-2 border-stone-300 bg-white font-zh font-bold text-brand-teal text-sm sm:text-base focus:outline-none focus:border-brand-teal';
+                    document.getElementById(`ex3-mark-${i}`).textContent = '';
+                });
+                document.getElementById('ex3-score').classList.add('hidden');
+            }
+        }
+
+        // =========================================================================
+        // 14. INITIALIZE APP ON LOAD
+        // =========================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+            }
+            switchTab('flashcards');
+            filterFlashcards('all');
+            initVocabQuiz();
+            selectDialogue(0);
+            renderGrammarSection();
+            initGrammarQuiz();
+            renderExercises();
+        });
+    </script>
 </body>
 </html>
