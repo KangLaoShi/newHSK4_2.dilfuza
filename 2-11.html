@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xitoy tilini o'rganamiz</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel for parsing JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .preserve-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- ICON COMPONENTS ---
+    const Volume2 = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+    );
+    const ChevronLeft = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    );
+    const ChevronRight = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    );
+    const CheckCircle = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+    );
+    const XCircle = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+    );
+    const RotateCcw = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+    );
+
+    // --- DATA DEFINITIONS ---
+    const VOCABULARY = [
+      { id: 1, zh: '头', pinyin: 'tóu', uz: 'bosh', ru: 'голова', en: 'head' },
+      { id: 2, zh: '疼', pinyin: 'téng', uz: "og'rimoq", ru: 'болеть', en: 'hurt' },
+      { id: 3, zh: '经常', pinyin: 'jīngcháng', uz: 'tez-tez', ru: 'часто', en: 'frequently; often' },
+      { id: 4, zh: '动', pinyin: 'dòng', uz: 'harakatlanmoq', ru: 'двигаться', en: 'move' },
+      { id: 5, zh: '着', pinyin: 'zhe', uz: '(davomiylik yuklamasi)', ru: '(частица продолжения)', en: '(aspect particle)' },
+      { id: 6, zh: '路上', pinyin: 'lùshang', uz: "yo'lda", ru: 'в пути', en: 'on the road; trip' },
+      { id: 7, zh: '慢', pinyin: 'màn', uz: 'sekin', ru: 'медленно', en: 'slow' },
+      { id: 8, zh: '进', pinyin: 'jìn', uz: 'kirmoq', ru: 'входить', en: 'come into' },
+      { id: 9, zh: '药', pinyin: 'yào', uz: 'dori', ru: 'лекарство', en: 'medicine' },
+      { id: 10, zh: '身体', pinyin: 'shēntǐ', uz: "tana, sog'liq", ru: 'тело, здоровье', en: 'body; health' },
+      { id: 11, zh: '时', pinyin: 'shí', uz: 'paytida, vaqtida', ru: 'время, период', en: 'a period of time' },
+      { id: 12, zh: '最', pinyin: 'zuì', uz: 'eng', ru: 'самый', en: 'most' },
+      { id: 13, zh: '药店', pinyin: 'yàodiàn', uz: 'dorixona', ru: 'аптека', en: 'pharmacy' },
+    ];
+
+    const DIALOGUES = [
+      {
+        title: "1-Matn (Text 1)",
+        context: { zh: "在教室，王一飞和白家月在聊天儿。", pinyin: "Zài jiàoshì, Wáng Yīfēi hé Bái Jiāyuè zài liáotiānr.", uz: "Sinf xonasida Vang Yifei va Bay Jiayue suhbatlashishmoqda.", ru: "В классе Ван Ифэй и Бай Цзяюэ разговаривают.", en: "In the classroom, Wang Yifei and Bai Jiayue are chatting." },
+        lines: [
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "家月，都下课了，你怎么还不回家？", textPinyin: "Jiāyuè, dōu xiàkè le, nǐ zěnme hái bù huí jiā?", uz: "Jiayue, dars tugadi, nega hali uyga qaytmayapsan?", ru: "Цзяюэ, уроки закончились, почему ты еще не идешь домой?", en: "Jiayue, class is over, why aren't you going home yet?" },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我头疼，不太舒服。", textPinyin: "Wǒ tóu téng, bú tài shūfu.", uz: "Boshim og'riyapti, o'zimni yaxshi his qilmayapman.", ru: "У меня болит голова, я плохо себя чувствую.", en: "My head hurts, I'm not feeling well." },
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "你这几天经常头疼，去医院看看吧。", textPinyin: "Nǐ zhè jǐ tiān jīngcháng tóu téng, qù yīyuàn kànkan ba.", uz: "Shu kunlarda boshing tez-tez og'riyapti, kasalxonaga borib ko'rin.", ru: "У тебя в последние дни часто болит голова, сходи в больницу.", en: "You've been having headaches frequently these days, you should go to the hospital." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我想休息一下，现在不能动，一动就疼。", textPinyin: "Wǒ xiǎng xiūxi yíxià, xiànzài bù néng dòng, yí dòng jiù téng.", uz: "Biroz dam olmoqchiman, hozir harakatlana olmayman, qimirlasam og'riyapti.", ru: "Я хочу немного отдохнуть, сейчас не могу двигаться, как только пошевелюсь - болит.", en: "I want to rest a bit, I can't move right now, it hurts as soon as I move." },
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "那你在这儿坐着，我去开车，一会儿送你去医院。", textPinyin: "Nà nǐ zài zhèr zuòzhe, wǒ qù kāichē, yíhuìr sòng nǐ qù yīyuàn.", uz: "U holda sen shu yerda o'tirib tur, men mashinani haydab kelaman, birozdan keyin kasalxonaga olib borib qo'yaman.", ru: "Тогда посиди здесь, я пойду за машиной, чуть позже отвезу тебя в больницу.", en: "Then you sit here, I'll go get the car, and take you to the hospital in a bit." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "谢谢王老师。", textPinyin: "Xièxie Wáng lǎoshī.", uz: "Rahmat, Vang o'qituvchi.", ru: "Спасибо, учитель Ван.", en: "Thank you, Teacher Wang." }
+        ]
+      },
+      {
+        title: "2-Matn (Text 2)",
+        context: { zh: "在王一飞车里，王一飞和白家月在聊天儿，李文打来一个电话。", pinyin: "Zài Wáng Yīfēi chē lǐ, Wáng Yīfēi hé Bái Jiāyuè zài liáotiānr, Lǐ Wén dǎ lái yígè diànhuà.", uz: "Vang Yifeining mashinasida, Vang Yifei va Bay Jiayue suhbatlashishmoqda, Li Ven qo'ng'iroq qildi.", ru: "В машине Ван Ифэй, Ван Ифэй и Бай Цзяюэ разговаривают, звонит Ли Вэнь.", en: "In Wang Yifei's car, Wang Yifei and Bai Jiayue are chatting, Li Wen makes a phone call." },
+        lines: [
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "现在路上车多，还下着雪，我开慢一点儿。", textPinyin: "Xiànzài lùshang chē duō, hái xiàzhe xuě, wǒ kāi màn yìdiǎnr.", uz: "Hozir yo'lda mashinalar ko'p, yana qor yog'yapti, men biroz sekinroq haydayman.", ru: "Сейчас на дороге много машин, еще и снег идет, я поеду помедленнее.", en: "There are many cars on the road now, and it's snowing, I will drive a bit slower." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "没问题，现在头没那么疼了。", textPinyin: "Méi wèntí, xiànzài tóu méi nàme téng le.", uz: "Muammo yo'q, hozir boshim unchalik og'rimayapti.", ru: "Без проблем, сейчас голова уже не так сильно болит.", en: "No problem, my head doesn't hurt as much now." },
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "好。李文来电话了，你帮我接一下。", textPinyin: "Hǎo. Lǐ Wén lái diànhuà le, nǐ bāng wǒ jiē yíxià.", uz: "Yaxshi. Li Vendan qo'ng'iroq kelyapti, menga javob berishga yordam ber.", ru: "Хорошо. Ли Вэнь звонит, помоги мне ответить.", en: "Okay. Li Wen is calling, please help me answer it." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "喂，李文，王老师开着车呢，你找她有事吗？", textPinyin: "Wèi, Lǐ Wén, Wáng lǎoshī kāizhe chē ne, nǐ zhǎo tā yǒu shì ma?", uz: "Alo, Li Ven, Vang o'qituvchi mashina haydayapti, unda ishing bormidi?", ru: "Алло, Ли Вэнь, учитель Ван за рулем, у тебя к ней дело?", en: "Hello, Li Wen, Teacher Wang is driving, do you need her for something?" },
+          { speaker: "李文", pinyin: "Lǐ Wén", zh: "没什么事。今天雪这么大，你们开车去哪儿啊？", textPinyin: "Méi shénme shì. Jīntiān xuě zhème dà, nǐmen kāichē qù nǎr a?", uz: "Hech qanday ish yo'q. Bugun qor shunchalik ko'p, mashinada qayerga ketyapsizlar?", ru: "Ничего особенного. Сегодня такой сильный снег, куда вы едете?", en: "Nothing much. The snow is so heavy today, where are you driving to?" },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "去医院，我头有点儿疼。", textPinyin: "Qù yīyuàn, wǒ tóu yǒudiǎnr téng.", uz: "Kasalxonaga, boshim biroz og'riyapti.", ru: "В больницу, у меня немного болит голова.", en: "To the hospital, my head hurts a bit." },
+          { speaker: "李文", pinyin: "Lǐ Wén", zh: "那我一会儿去看看你。", textPinyin: "Nà wǒ yíhuìr qù kànkan nǐ.", uz: "U holda men birozdan keyin borib seni ko'rib kelaman.", ru: "Тогда я позже навещу тебя.", en: "Then I'll go see you in a while." }
+        ]
+      },
+      {
+        title: "3-Matn (Text 3)",
+        context: { zh: "在房间，李文来看望白家月。", pinyin: "Zài fángjiān, Lǐ Wén lái kànwàng Bái Jiāyuè.", uz: "Xonada, Li Ven Bay Jiayueni ko'rgani keldi.", ru: "В комнате, Ли Вэнь пришел навестить Бай Цзяюэ.", en: "In the room, Li Wen comes to visit Bai Jiayue." },
+        lines: [
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "李文，快请进！", textPinyin: "Lǐ Wén, kuài qǐng jìn!", uz: "Li Ven, tez kiring!", ru: "Ли Вэнь, проходи скорее!", en: "Li Wen, please come in quickly!" },
+          { speaker: "李文", pinyin: "Lǐ Wén", zh: "家月，你怎么样了？头还疼吗？", textPinyin: "Jiāyuè, nǐ zěnmeyàng le? Tóu hái téng ma?", uz: "Jiayue, ahvoling qanday? Boshing hali ham og'riyaptimi?", ru: "Цзяюэ, как ты? Голова все еще болит?", en: "Jiayue, how are you doing? Does your head still hurt?" },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "不那么疼了。医生开了一些药，吃完就好多了。", textPinyin: "Bú nàme téng le. Yīshēng kāile yìxiē yào, chī wán jiù hǎo duō le.", uz: "Unchalik og'rimayapti. Shifokor ba'zi dorilarni yozib berdi, ularni ichgach ancha yaxshiman.", ru: "Уже не так болит. Врач выписал немного лекарств, после них стало намного лучше.", en: "It doesn't hurt as much. The doctor prescribed some medicine, I feel much better after taking it." },
+          { speaker: "李文", pinyin: "Lǐ Wén", zh: "那就好！", textPinyin: "Nà jiù hǎo!", uz: "Unda yaxshi!", ru: "Вот и хорошо!", en: "That's good!" },
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "家月，你想不想吃点儿东西？", textPinyin: "Jiāyuè, nǐ xiǎng bu xiǎng chī diǎnr dōngxi?", uz: "Jiayue, biror narsa yeyishni xohlaysanmi?", ru: "Цзяюэ, не хочешь ли ты чего-нибудь поесть?", en: "Jiayue, do you want to eat something?" },
+          { speaker: "李文", pinyin: "Lǐ Wén", zh: "吃点儿吧，身体不舒服时更要好好吃饭。", textPinyin: "Chī diǎnr ba, shēntǐ bù shūfu shí gèng yào hǎohǎo chī fàn.", uz: "Biroz yegin, tobing qochganda albatta yaxshilab ovqatlanish kerak.", ru: "Поешь немного, когда плохо себя чувствуешь, нужно еще лучше питаться.", en: "Eat a little, when you are not feeling well, you should eat properly." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "吃点儿什么呢？", textPinyin: "Chī diǎnr shénme ne?", uz: "Nima yesam ekan?", ru: "Что бы поесть?", en: "What should I eat?" },
+          { speaker: "王一飞", pinyin: "Wáng Yīfēi", zh: "你最喜欢吃中国菜，我做几个中国菜吧。", textPinyin: "Nǐ zuì xǐhuan chī Zhōngguó cài, wǒ zuò jǐ gè Zhōngguó cài ba.", uz: "Sen hammadan ham Xitoy ovqatini yoqtirasan, men bir nechta Xitoy ovqati tayyorlayman.", ru: "Ты больше всего любишь китайскую еду, я приготовлю несколько китайских блюд.", en: "You like Chinese food the most, I will cook some Chinese dishes." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "好的，谢谢王老师。", textPinyin: "Hǎo de, xièxie Wáng lǎoshī.", uz: "Yaxshi, rahmat Vang o'qituvchi.", ru: "Хорошо, спасибо, учитель Ван.", en: "Okay, thank you Teacher Wang." }
+        ]
+      },
+      {
+        title: "4-Matn (Text 4 - Kundalik / Diary)",
+        context: { zh: "在房间，白家月在写日记。", pinyin: "Zài fángjiān, Bái Jiāyuè zài xiě rìjì.", uz: "Xonada, Bay Jiayue kundalik yozyapti.", ru: "В комнате Бай Цзяюэ пишет дневник.", en: "In the room, Bai Jiayue is writing a diary." },
+        lines: [
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "我这几天经常头疼，从药店买了点儿药，没去医院。", textPinyin: "Wǒ zhè jǐ tiān jīngcháng tóu téng, cóng yàodiàn mǎile diǎnr yào, méi qù yīyuàn.", uz: "Shu kunlarda boshim tez-tez og'riyapti, dorixonadan biroz dori oldim, kasalxonaga bormadim.", ru: "В эти дни у меня часто болит голова, я купила немного лекарств в аптеке и не пошла в больницу.", en: "I have been having frequent headaches these days, bought some medicine from the pharmacy, didn't go to the hospital." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "今天下课后，王老师看我不舒服，就送我去医院了。", textPinyin: "Jīntiān xiàkè hòu, Wáng lǎoshī kàn wǒ bù shūfu, jiù sòng wǒ qù yīyuàn le.", uz: "Bugun darsdan so'ng, Vang o'qituvchi ahvolim yaxshi emasligini ko'rib, meni kasalxonaga olib bordi.", ru: "Сегодня после уроков учитель Ван увидела, что мне плохо, и отвезла меня в больницу.", en: "Today after class, Teacher Wang saw I was unwell and took me to the hospital." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "从医院回来，李文也来看我了。", textPinyin: "Cóng yīyuàn huílái, Lǐ Wén yě lái kàn wǒ le.", uz: "Kasalxonadan qaytganimda, Li Ven ham meni ko'rgani keldi.", ru: "По возвращении из больницы Ли Вэнь тоже пришел навестить меня.", en: "Returning from the hospital, Li Wen also came to see me." },
+          { speaker: "白家月", pinyin: "Bái Jiāyuè", zh: "现在他们都回去了，我也要睡觉了。", textPinyin: "Xiànzài tāmen dōu huíqù le, wǒ yě yào shuìjiào le.", uz: "Hozir ularning barchasi qaytib ketishdi, men ham uxlamoqchiman.", ru: "Сейчас они все разошлись по домам, и я тоже собираюсь спать.", en: "Now they have all gone back, and I am going to sleep too." }
+        ]
+      }
+    ];
+
+    const GRAMMAR = [
+      {
+        title: "1. 动态助词“着” (1) - Davomiylikni bildiruvchi yuklama",
+        explanation: {
+          uz: "Fe'ldan keyin kelib, harakat yoki holatning davom etayotganini bildiradi. Inkor shakli fe'ldan oldin '没(有)' qo'yish orqali yasaladi.",
+          ru: "Используется после глагола для указания на продолжение действия или состояния. Отрицательная форма образуется добавлением '没(有)' перед глаголом.",
+          en: "Used after a verb to indicate the continuation of an action or a state. The negative form is created by adding '没(有)' before the verb."
+        },
+        examples: [
+          { zh: "那你在这儿坐着。", pinyin: "Nà nǐ zài zhèr zuòzhe.", uz: "U holda siz shu yerda o'tirib turing." },
+          { zh: "教室的门开着。", pinyin: "Jiàoshì de mén kāizhe.", uz: "Sinf xonasining eshigi ochiq turibdi." },
+          { zh: "教室的门没开着。", pinyin: "Jiàoshì de mén méi kāizhe.", uz: "Sinf xonasining eshigi ochiq turmayapti." }
+        ]
+      },
+      {
+        title: "2. 动态助词“着” (2) - Davomiylikni bildiruvchi yuklama",
+        explanation: {
+          uz: "Harakatning davomiyligini bildiruvchi gaplarda to'ldiruvchi '着' yuklamasidan keyin kelishi kerak. Savol shakllari: 1) gap oxirida '吗', 2) gap oxirida '没有', 3) Fe'l+没+Fe'l+着.",
+          ru: "В предложениях, указывающих на продолжение, дополнение должно стоять после '着'. Три формы вопроса: 1) '吗' в конце, 2) '没有' в конце, 3) Глагол+没+Глагол+着.",
+          en: "In sentences indicating continuation, the object must be placed after '着'. Three question forms: 1) add '吗' at the end, 2) add '没有' at the end, 3) Verb+没+Verb+着."
+        },
+        examples: [
+          { zh: "她穿着白色的裤子。", pinyin: "Tā chuānzhe báisè de kùzi.", uz: "U oq shim kiyib olgan." },
+          { zh: "教室的门开着吗？", pinyin: "Jiàoshì de mén kāizhe ma?", uz: "Sinf xonasining eshigi ochiqmi?" },
+          { zh: "她拿没拿着手机？", pinyin: "Tā ná méi názhe shǒujī?", uz: "U telefonini ushlab turibdimi yo'qmi?" }
+        ]
+      },
+      {
+        title: "3. 程度副词“最” - 'Eng' daraja ravishi",
+        explanation: {
+          uz: "'最' daraja ravishi sifatlar yoki psixologik fe'llar oldidan kelib, biror xususiyat barcha o'xshash odamlar yoki narsalardan ustun ekanligini bildiradi.",
+          ru: "Наречие степени '最' используется перед прилагательными или психологическими глаголами, чтобы показать, что признак превосходит все подобные вещи.",
+          en: "The adverb of degree '最' is used before adjectives or psychological verbs to indicate that a certain attribute surpasses all similar people/things."
+        },
+        examples: [
+          { zh: "你最喜欢吃中国菜。", pinyin: "Nǐ zuì xǐhuan chī Zhōngguó cài.", uz: "Siz hammadan ham ko'p Xitoy taomini yoqtirasiz." },
+          { zh: "在我们家，爸爸最高。", pinyin: "Zài wǒmen jiā, bàba zuì gāo.", uz: "Bizning oilada eng bo'yi balandi dada." },
+          { zh: "你们班谁说中文说得最好？", pinyin: "Nǐmen bān shéi shuō zhōngwén shuō de zuì hǎo?", uz: "Sinfingizda kim xitoychada eng yaxshi gapiradi?" }
+        ]
+      }
+    ];
+
+    const GRAMMAR_TEST_QUESTIONS = [
+      { q: "门没开___。", options: ["着", "了", "过", "得"], ans: 0 },
+      { q: "你在___儿坐着。", options: ["的", "这", "了", "着"], ans: 1 },
+      { q: "外边下___雨。", options: ["过", "得", "着", "了"], ans: 2 },
+      { q: "我___想去中国旅游。", options: ["最", "更", "比", "就"], ans: 0 },
+      { q: "你们班谁的汉语___好？", options: ["就", "最", "才", "都"], ans: 1 },
+      { q: "王老师开___车呢。", options: ["的", "了", "着", "过"], ans: 2 },
+      { q: "她没穿___红色的衣服。", options: ["着", "了", "得", "在"], ans: 0 },
+      { q: "电视开着___？", options: ["呢", "吗", "吧", "啊"], ans: 1 },
+      { q: "他拿___拿着书？", options: ["不", "是", "没", "着"], ans: 2 },
+      { q: "苹果___好吃。", options: ["最", "在", "还", "着"], ans: 0 },
+      { q: "那个房间的门关___。", options: ["了", "着", "吗", "过"], ans: 1 },
+      { q: "昨天路上车很___。", options: ["了", "大", "多", "着"], ans: 2 },
+      { q: "妹妹___喜欢看电影。", options: ["最", "着", "没", "就"], ans: 0 },
+      { q: "老师站着，学生___着。", options: ["跑", "坐", "走", "站"], ans: 1 },
+      { q: "桌子上放___一本书。", options: ["过", "了", "着", "得"], ans: 2 }
+    ];
+
+    const BLANKS_QUESTIONS = [
+      { text: "路上车多人多，你 ___ 点儿开。", answer: "慢" },
+      { text: "他今天 ___ 不舒服，所以没来上课。", answer: "身体" },
+      { text: "星期天我 ___ 跟朋友去踢球。", answer: "经常" },
+      { text: "我到家 ___ 都快9点了。", answer: "时" },
+      { text: "他是我 ___ 好的朋友。", answer: "最" },
+      { text: "我不舒服时就来这个 ___ 买药。", answer: "药店" },
+      { text: "我的 ___ 有点儿疼。", answer: "头" },
+      { text: "他的腿受伤了，不能 ___。", answer: "动" },
+      { text: "老师站 ___ 上课。", answer: "着" },
+      { text: "医生开了些 ___，吃完就好多了。", answer: "药" },
+      { text: "外面冷，快请 ___ 来。", answer: "进" },
+      { text: "下雪了，在 ___ 小心一点儿。", answer: "路上" },
+      { text: "昨天踢足球，今天腿很 ___。", answer: "疼" }
+    ];
+    const BLANKS_OPTIONS = ["慢", "身体", "经常", "时", "最", "药店", "头", "动", "着", "药", "进", "路上", "疼"];
+
+    // --- UTILITY ---
+    const playAudio = (text) => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-CN';
+        window.speechSynthesis.speak(msg);
+      }
+    };
+
+    // --- COMPONENTS ---
+    const Flashcards = () => {
+      const [index, setIndex] = useState(0);
+      const [isFlipped, setIsFlipped] = useState(false);
+      const word = VOCABULARY[index];
+
+      const nextCard = () => {
+        setIsFlipped(false);
+        setIndex((prev) => (prev + 1) % VOCABULARY.length);
+      };
+      const prevCard = () => {
+        setIsFlipped(false);
+        setIndex((prev) => (prev - 1 + VOCABULARY.length) % VOCABULARY.length);
+      };
+
+      return (
+        <div className="flex flex-col items-center w-full mt-8">
+          <div 
+            className="relative w-full max-w-md h-80 perspective-1000 cursor-pointer"
+            onClick={() => setIsFlipped(!isFlipped)}
+          >
+            <div className={`w-full h-full duration-500 preserve-3d relative transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
+              {/* Front */}
+              <div className="absolute w-full h-full backface-hidden flex flex-col items-center justify-center bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-700 shadow-2xl p-6">
+                 <button 
+                    onClick={(e) => { e.stopPropagation(); playAudio(word.zh); }}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-700 rounded-full transition-colors"
+                 >
+                    <Volume2 size={24} />
+                 </button>
+                 <h2 className="text-8xl font-bold text-white mb-6">{word.zh}</h2>
+              </div>
+              {/* Back */}
+              <div className="absolute w-full h-full backface-hidden rotate-y-180 flex flex-col items-center justify-center bg-slate-800/80 backdrop-blur-md rounded-2xl border border-teal-500/30 shadow-2xl p-6 text-center">
+                 <button 
+                    onClick={(e) => { e.stopPropagation(); playAudio(word.zh); }}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-teal-400 hover:bg-slate-700 rounded-full transition-colors"
+                 >
+                    <Volume2 size={24} />
+                 </button>
+                 <p className="text-4xl text-teal-400 font-semibold mb-6">{word.pinyin}</p>
+                 <div className="space-y-3 w-full border-t border-slate-700 pt-6">
+                    <p className="text-xl text-slate-200"><span className="text-slate-500 font-medium mr-2">UZ:</span>{word.uz}</p>
+                    <p className="text-lg text-slate-300"><span className="text-slate-500 font-medium mr-2">RU:</span>{word.ru}</p>
+                    <p className="text-lg text-slate-300"><span className="text-slate-500 font-medium mr-2">EN:</span>{word.en}</p>
+                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6 mt-8">
+            <button onClick={prevCard} className="p-3 bg-slate-800 text-slate-300 hover:text-white rounded-full hover:bg-slate-700 transition">
+              <ChevronLeft size={28} />
+            </button>
+            <span className="text-slate-400 font-medium text-lg">{index + 1} / {VOCABULARY.length}</span>
+            <button onClick={nextCard} className="p-3 bg-slate-800 text-slate-300 hover:text-white rounded-full hover:bg-slate-700 transition">
+              <ChevronRight size={28} />
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const VocabTest = () => {
+      const [questions, setQuestions] = useState([]);
+      const [currentQ, setCurrentQ] = useState(0);
+      const [score, setScore] = useState(0);
+      const [showResult, setShowResult] = useState(false);
+      const [selected, setSelected] = useState(null);
+
+      useEffect(() => {
+        generateTest();
+      }, []);
+
+      const generateTest = () => {
+        let qArray = [...VOCABULARY].sort(() => 0.5 - Math.random());
+        let generated = qArray.map(word => {
+          let options = [word.uz];
+          while(options.length < 4) {
+            let randWord = VOCABULARY[Math.floor(Math.random() * VOCABULARY.length)].uz;
+            if(!options.includes(randWord)) options.push(randWord);
+          }
+          return { word: word, options: options.sort(() => 0.5 - Math.random()) };
+        });
+        setQuestions(generated);
+        setCurrentQ(0);
+        setScore(0);
+        setShowResult(false);
+        setSelected(null);
+      };
+
+      const handleSelect = (opt) => {
+        if (selected) return;
+        setSelected(opt);
+        if (opt === questions[currentQ].word.uz) {
+          setScore(s => s + 1);
+        }
+        setTimeout(() => {
+          if (currentQ + 1 < questions.length) {
+            setCurrentQ(c => c + 1);
+            setSelected(null);
+          } else {
+            setShowResult(true);
+          }
+        }, 1000);
+      };
+
+      if (!questions.length) return null;
+
+      if (showResult) {
+        return (
+          <div className="flex flex-col items-center justify-center p-10 bg-slate-800/50 rounded-2xl border border-slate-700 max-w-lg mx-auto mt-10">
+            <h2 className="text-3xl text-white font-bold mb-4">Natija</h2>
+            <p className="text-6xl font-black text-teal-400 mb-8">{score} / {questions.length}</p>
+            <button onClick={generateTest} className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-medium transition flex items-center gap-2">
+              <RotateCcw size={20} /> Qayta boshlash
+            </button>
+          </div>
+        );
+      }
+
+      const q = questions[currentQ];
+
+      return (
+        <div className="flex flex-col items-center w-full mt-6 max-w-xl mx-auto">
+          <div className="w-full flex justify-between items-center mb-6 px-4">
+            <span className="text-slate-400 font-medium">Savol: {currentQ + 1} / {questions.length}</span>
+            <span className="text-teal-400 font-medium">To'g'ri: {score}</span>
+          </div>
+          
+          <div className="w-full bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-3xl p-10 flex flex-col items-center text-center shadow-xl">
+            <p className="text-slate-400 text-lg mb-4">Ushbu so'zning ma'nosini toping:</p>
+            <h2 className="text-7xl font-bold text-white mb-10">{q.word.zh}</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+              {q.options.map((opt, i) => {
+                let btnClass = "bg-slate-700 text-slate-200 hover:bg-slate-600";
+                if (selected) {
+                  if (opt === q.word.uz) btnClass = "bg-teal-600 text-white"; 
+                  else if (opt === selected) btnClass = "bg-red-500/80 text-white"; 
+                  else btnClass = "bg-slate-800 text-slate-500 opacity-50"; 
+                }
+                return (
+                  <button 
+                    key={i}
+                    onClick={() => handleSelect(opt)}
+                    disabled={!!selected}
+                    className={`py-4 px-6 rounded-xl text-lg font-medium transition-all ${btnClass}`}
+                  >
+                    {opt}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const Dialogues = () => {
+      return (
+        <div className="space-y-10 mt-6 max-w-3xl mx-auto pb-10">
+          {DIALOGUES.map((dialogue, idx) => (
+            <div key={idx} className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden shadow-lg">
+              <div className="bg-slate-900/50 px-6 py-4 border-b border-slate-700/50">
+                <h3 className="text-xl font-bold text-teal-400 mb-2">{dialogue.title}</h3>
+                <div className="text-slate-300 text-sm space-y-1">
+                   <p className="text-white text-base mb-1">{dialogue.context.zh} <span className="text-slate-400 text-sm ml-2">({dialogue.context.pinyin})</span></p>
+                   <p><span className="text-slate-500 font-medium">UZ:</span> {dialogue.context.uz}</p>
+                   <p><span className="text-slate-500 font-medium">RU:</span> {dialogue.context.ru}</p>
+                   <p><span className="text-slate-500 font-medium">EN:</span> {dialogue.context.en}</p>
+                </div>
+              </div>
+              <div className="p-6 space-y-6">
+                {dialogue.lines.map((line, lIdx) => (
+                  <div key={lIdx} className="flex gap-4">
+                    <div className="min-w-[80px] text-right mt-1">
+                      <span className="inline-block bg-slate-700 text-slate-200 text-xs font-bold px-2 py-1 rounded">
+                        {line.speaker}
+                      </span>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-start justify-between">
+                         <div>
+                            <p className="text-white font-medium text-lg">{line.zh}</p>
+                            <p className="text-teal-400 text-sm mb-2">{line.textPinyin}</p>
+                         </div>
+                         <button 
+                            onClick={() => playAudio(line.zh)}
+                            className="p-1.5 text-slate-400 hover:text-teal-400 hover:bg-slate-700/50 rounded-full transition"
+                          >
+                            <Volume2 size={18} />
+                          </button>
+                      </div>
+                      <p className="text-slate-300 text-sm"><span className="text-slate-500 mr-2">UZ:</span>{line.uz}</p>
+                      <p className="text-slate-400 text-sm"><span className="text-slate-500 mr-2">RU:</span>{line.ru}</p>
+                      <p className="text-slate-400 text-sm"><span className="text-slate-500 mr-2">EN:</span>{line.en}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    const Grammar = () => {
+      return (
+        <div className="space-y-8 mt-6 max-w-3xl mx-auto pb-10">
+          {GRAMMAR.map((item, idx) => (
+            <div key={idx} className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-2xl font-bold text-teal-400 mb-4">{item.title}</h3>
+              
+              <div className="space-y-2 mb-6 text-sm">
+                <p className="text-slate-200"><span className="text-slate-500 font-semibold w-8 inline-block">UZ:</span> {item.explanation.uz}</p>
+                <p className="text-slate-300"><span className="text-slate-500 font-semibold w-8 inline-block">RU:</span> {item.explanation.ru}</p>
+                <p className="text-slate-300"><span className="text-slate-500 font-semibold w-8 inline-block">EN:</span> {item.explanation.en}</p>
+              </div>
+
+              <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                <h4 className="text-slate-400 font-semibold mb-3 text-sm uppercase tracking-wider">Misollar (Examples)</h4>
+                <div className="space-y-4">
+                  {item.examples.map((ex, eIdx) => (
+                    <div key={eIdx} className="flex flex-col border-l-2 border-teal-500 pl-4">
+                       <div className="flex items-center gap-3">
+                          <p className="text-white text-lg">{ex.zh}</p>
+                          <button 
+                            onClick={() => playAudio(ex.zh)}
+                            className="p-1 text-slate-500 hover:text-teal-400 transition"
+                          >
+                            <Volume2 size={16} />
+                          </button>
+                       </div>
+                       <p className="text-teal-400/80 text-sm">{ex.pinyin}</p>
+                       <p className="text-slate-400 text-sm mt-1">{ex.uz}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    };
+
+    const GrammarTest = () => {
+      const [score, setScore] = useState(0);
+      const [showResult, setShowResult] = useState(false);
+      const [answers, setAnswers] = useState(Array(GRAMMAR_TEST_QUESTIONS.length).fill(null));
+
+      const handleOption = (qIdx, optIdx) => {
+        if (showResult) return;
+        const newAns = [...answers];
+        newAns[qIdx] = optIdx;
+        setAnswers(newAns);
+      };
+
+      const submitTest = () => {
+        let s = 0;
+        answers.forEach((ans, idx) => {
+          if (ans === GRAMMAR_TEST_QUESTIONS[idx].ans) s++;
+        });
+        setScore(s);
+        setShowResult(true);
+      };
+
+      const resetTest = () => {
+        setAnswers(Array(GRAMMAR_TEST_QUESTIONS.length).fill(null));
+        setScore(0);
+        setShowResult(false);
+      };
+
+      return (
+        <div className="max-w-2xl mx-auto mt-6 pb-10">
+          {!showResult ? (
+            <div className="space-y-6">
+              <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl mb-6">
+                <p className="text-slate-300">请选择正确的答案填空 (Iltimos, bo'sh joyga to'g'ri javobni tanlang):</p>
+              </div>
+              {GRAMMAR_TEST_QUESTIONS.map((q, idx) => (
+                <div key={idx} className="bg-slate-800/60 p-6 rounded-xl border border-slate-700/50">
+                  <p className="text-xl text-white font-medium mb-4">{idx + 1}. {q.q}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {q.options.map((opt, oIdx) => (
+                      <button
+                        key={oIdx}
+                        onClick={() => handleOption(idx, oIdx)}
+                        className={`p-3 rounded-lg text-lg font-medium transition ${
+                          answers[idx] === oIdx 
+                            ? 'bg-teal-600 text-white' 
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <button 
+                onClick={submitTest}
+                disabled={answers.includes(null)}
+                className={`w-full py-4 rounded-xl text-lg font-bold transition mt-6 ${
+                  answers.includes(null) 
+                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed' 
+                    : 'bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-900/50'
+                }`}
+              >
+                Tekshirish (Check)
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center bg-slate-800/80 p-10 rounded-3xl border border-slate-700 text-center shadow-2xl">
+              <h2 className="text-3xl text-white font-bold mb-2">Natija (Score)</h2>
+              <p className="text-7xl font-black text-teal-400 mb-8">{score} / {GRAMMAR_TEST_QUESTIONS.length}</p>
+              
+              <div className="w-full space-y-3 mb-8 text-left">
+                 {GRAMMAR_TEST_QUESTIONS.map((q, idx) => {
+                    const isCorrect = answers[idx] === q.ans;
+                    return (
+                       <div key={idx} className={`p-4 rounded-lg flex items-start gap-3 ${isCorrect ? 'bg-teal-900/20 border border-teal-800/50' : 'bg-red-900/20 border border-red-800/50'}`}>
+                          <div className="mt-1">
+                             {isCorrect ? <CheckCircle size={20} className="text-teal-400"/> : <XCircle size={20} className="text-red-400"/>}
+                          </div>
+                          <div>
+                             <p className="text-white">{idx + 1}. {q.q.replace('___', ` [ ${q.options[q.ans]} ] `)}</p>
+                             {!isCorrect && <p className="text-red-300 text-sm mt-1">Sizning javobingiz: {q.options[answers[idx]]}</p>}
+                          </div>
+                       </div>
+                    )
+                 })}
+              </div>
+
+              <button onClick={resetTest} className="px-8 py-4 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-bold transition flex items-center gap-2">
+                <RotateCcw size={22} /> Qayta boshlash
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const FillBlanks = () => {
+      const [answers, setAnswers] = useState(Array(BLANKS_QUESTIONS.length).fill(""));
+      const [checked, setChecked] = useState(false);
+
+      const handleSelect = (idx, val) => {
+        if(checked) return;
+        const newAns = [...answers];
+        newAns[idx] = val;
+        setAnswers(newAns);
+      };
+
+      const reset = () => {
+        setAnswers(Array(BLANKS_QUESTIONS.length).fill(""));
+        setChecked(false);
+      }
+
+      return (
+        <div className="max-w-3xl mx-auto mt-6 pb-10">
+          <div className="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-xl mb-6">
+            <p className="text-slate-300 font-medium mb-4">So'zlarni tanlab gaplarni to'ldiring:</p>
+            <div className="flex flex-wrap gap-2">
+              {BLANKS_OPTIONS.map((opt, i) => (
+                 <span key={i} className="px-3 py-1 bg-slate-700 text-teal-300 rounded-md text-sm border border-slate-600">{opt}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {BLANKS_QUESTIONS.map((q, idx) => {
+              const parts = q.text.split('___');
+              const isCorrect = checked && answers[idx] === q.answer;
+              const isWrong = checked && answers[idx] !== q.answer;
+
+              return (
+                <div key={idx} className={`bg-slate-800/60 p-5 rounded-xl border flex items-center gap-3 transition ${isCorrect ? 'border-teal-500/50 bg-teal-900/10' : isWrong ? 'border-red-500/50 bg-red-900/10' : 'border-slate-700/50'}`}>
+                  <span className="text-slate-500 font-medium w-6">{idx + 1}.</span>
+                  <div className="flex-1 text-lg text-slate-200 flex flex-wrap items-center">
+                    <span className="mr-2">{parts[0]}</span>
+                    <select 
+                      className={`bg-slate-900 border px-3 py-1 rounded-lg text-teal-400 font-bold focus:outline-none appearance-none cursor-pointer ${checked ? 'cursor-not-allowed' : ''} ${isWrong ? 'border-red-500/50' : 'border-slate-600'}`}
+                      value={answers[idx]}
+                      onChange={(e) => handleSelect(idx, e.target.value)}
+                      disabled={checked}
+                    >
+                      <option value="" disabled>-</option>
+                      {BLANKS_OPTIONS.map((o, i) => (
+                        <option key={i} value={o}>{o}</option>
+                      ))}
+                    </select>
+                    <span className="ml-2">{parts[1]}</span>
+                  </div>
+                  {checked && isCorrect && <CheckCircle className="text-teal-400 ml-auto" size={24} />}
+                  {checked && isWrong && <XCircle className="text-red-400 ml-auto" size={24} />}
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="mt-8 flex gap-4">
+             {!checked ? (
+               <button 
+                 onClick={() => setChecked(true)}
+                 disabled={answers.includes("")}
+                 className={`flex-1 py-4 rounded-xl text-lg font-bold transition ${answers.includes("") ? 'bg-slate-700 text-slate-500 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-500 text-white shadow-lg'}`}
+               >
+                 Tekshirish
+               </button>
+             ) : (
+               <button 
+                 onClick={reset}
+                 className="flex-1 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-lg font-bold transition flex justify-center items-center gap-2"
+               >
+                 <RotateCcw size={20} /> Qayta boshlash
+               </button>
+             )}
+          </div>
+        </div>
+      )
+    };
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('flashcards');
+
+      const TABS = [
+        { id: 'flashcards', label: "Lug'atlar" },
+        { id: 'vocabTest', label: "Lug'at Testi" },
+        { id: 'dialogues', label: "Muloqot" },
+        { id: 'grammar', label: "Grammatika" },
+        { id: 'grammarTest', label: "Grammatika Testi" },
+        { id: 'fillBlanks', label: "So'zlarni to'ldirish" }
+      ];
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 font-sans selection:bg-teal-500/30 text-slate-100 flex flex-col">
+          <header className="pt-10 pb-6 px-6 text-center shrink-0">
+            <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-400 mb-3 drop-shadow-sm">
+              我最喜欢吃中国菜
+            </h1>
+            <p className="text-slate-400 font-medium tracking-wide mt-2">
+              Dilfuza Kāng lǎo shī bilan xitoy tilini o'rganmiz
+            </p>
+          </header>
+
+          <main className="flex-1 w-full max-w-5xl mx-auto px-4 pb-20 flex flex-col">
+            <div className="flex flex-wrap justify-center gap-2 mb-8">
+              {TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${
+                    activeTab === tab.id 
+                      ? 'bg-teal-600 text-white shadow-lg shadow-teal-900/50 scale-105' 
+                      : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-700 border border-slate-700/50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-full flex-1">
+              {activeTab === 'flashcards' && <Flashcards />}
+              {activeTab === 'vocabTest' && <VocabTest />}
+              {activeTab === 'dialogues' && <Dialogues />}
+              {activeTab === 'grammar' && <Grammar />}
+              {activeTab === 'grammarTest' && <GrammarTest />}
+              {activeTab === 'fillBlanks' && <FillBlanks />}
+            </div>
+          </main>
+
+          <footer className="py-6 text-center text-slate-500 text-sm border-t border-slate-800/50 bg-slate-900/50 backdrop-blur-md shrink-0">
+            <p>HSK 2 NEW3.0 - Lesson 11</p>
+            <p className="mt-1">© 2026 Dilfuza Kāng lǎo shī (telegram@diffila)</p>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
